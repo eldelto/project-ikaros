@@ -5,12 +5,12 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/eldelto/ikaros/internal/viewer/di"
+	"github.com/eldelto/ikaros/internal/analyzer"
 	"github.com/go-chi/chi/v5"
 )
 
 func main() {
-	env := di.Init()
+	env := analyzer.Init()
 	defer env.Close()
 
 	port := 8080

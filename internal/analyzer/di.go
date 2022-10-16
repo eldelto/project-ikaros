@@ -1,7 +1,7 @@
-package di
+package analyzer
 
 import (
-	"github.com/eldelto/ikaros/internal/viewer/api"
+	"github.com/eldelto/ikaros/internal/analyzer/api"
 	"github.com/eldelto/ikaros/internal/web"
 )
 
