@@ -1,0 +1,16 @@
+{
+  "name": "analyzer-web",
+  "version": "0.1.0-SNAPSHOT",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "eldelto",
+  "license": "ISC",
+  "dependencies": {
+    "chart.js": "^3.9.1",
+    "esbuild": "^0.15.11",
+    "nats.ws": "^1.9.0"
+  }
+}

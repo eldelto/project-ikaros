@@ -1,7 +1,15 @@
 .PHONY: build
-build:
-	@echo Building cmd/viewer/main.go
-	@go build -o bin/viewer cmd/viewer/main.go
+build: bin/analyzer bin/generator
+
+bin/analyzer: .FORCE internal/analyzer/api/assets/index.js
+	@go build -o bin/analyzer cmd/analyzer/main.go
+
+internal/analyzer/api/assets/index.js: $(wildcard analyzer-web/*.js)
+	@analyzer-web/node_modules/.bin/esbuild analyzer-web/index.js \
+		--bundle --minify --outfile=internal/analyzer/api/assets/index.js
+
+bin/generator: .FORCE
+	@go build -o bin/generator cmd/generator/main.go
 
 .PHONY: download
 download:
@@ -15,8 +23,8 @@ install-tools: download
 
 .PHONY: run
 run:
-	@echo Starting Viewer
-	@go run cmd/viewer/main.go
+	@echo Starting Analyser
+	@go run cmd/analyzer/main.go
 
 .PHONY: run-loop
 run-loop:
@@ -31,3 +39,9 @@ test:
 test-loop:
 	@echo Waiting for file changes ...
 	@reflex -r '\.go$$' make test
+
+.PHONY: clean
+clean:
+	@rm bin/*
+
+.FORCE:
