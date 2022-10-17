@@ -3,6 +3,6 @@ version: "3.6"
 services:
   nats:
     image: nats:2.9.3-alpine3.16
-    ports: 
-      - "5222:4222"
+    ports:
+      - "4222:4222"
     restart: always

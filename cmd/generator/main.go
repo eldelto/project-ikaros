@@ -28,6 +28,7 @@ func main() {
 		if value > maxValue {
 			value = minValue
 		}
+		// dateTime := time.Now()
 
 		nc.Publish(subject, []byte(strconv.FormatFloat(value, 'f', -1, 64)))
 		value += 0.1
