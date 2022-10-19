@@ -1,12 +1,12 @@
 .PHONY: build
-build: bin/analyzer bin/generator
+build: bin/tower bin/generator
 
-bin/analyzer: .FORCE internal/analyzer/api/assets/index.js
-	@go build -o bin/analyzer cmd/analyzer/main.go
+bin/tower: .FORCE internal/tower/api/assets/index.js
+	@go build -o bin/tower cmd/tower/main.go
 
-internal/analyzer/api/assets/index.js: $(wildcard analyzer-web/*.js)
+internal/tower/api/assets/index.js: $(wildcard analyzer-web/*.js)
 	@analyzer-web/node_modules/.bin/esbuild analyzer-web/index.js \
-		--bundle --minify --outfile=internal/analyzer/api/assets/index.js
+		--bundle --minify --outfile=internal/tower/api/assets/index.js
 
 bin/generator: .FORCE
 	@go build -o bin/generator cmd/generator/main.go
@@ -22,13 +22,13 @@ install-tools: download
 	@cat tools.go | grep _ | awk -F'"' '{print $$2}' | xargs -tI % go install %
 
 .PHONY: run
-run:
-	@echo Starting Analyser
-	@go run cmd/analyzer/main.go
+run: build
+	@echo Starting Tower
+	@bin/tower
 
 .PHONY: run-loop
 run-loop:
-	@reflex -r '\.(go|html|css|js)$$' -s make run
+	@reflex -r "\.(go|html|css|js)$$" -R ".*node_modules.*" -s make run
 
 .PHONY: test
 test:

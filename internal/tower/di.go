@@ -1,7 +1,7 @@
-package analyzer
+package tower
 
 import (
-	"github.com/eldelto/ikaros/internal/analyzer/api"
+	"github.com/eldelto/ikaros/internal/tower/api"
 	"github.com/eldelto/ikaros/internal/web"
 )
 

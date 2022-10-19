@@ -1,5 +1,4 @@
 import Chart from "chart.js/auto";
-import connect from "nats.ws/esm";
 
 window.onload = function () {
   init();
@@ -12,7 +11,7 @@ function init() {
     type: "line",
     data: {
       datasets: [{
-        label: "sensor1",
+        label: "accelerometer0",
         data: [{ x: "2016-12-25", y: 20 }, { x: "2016-12-26", y: 10 }]
       }]
     },
