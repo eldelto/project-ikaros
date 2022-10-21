@@ -10,7 +10,6 @@
   "license": "ISC",
   "dependencies": {
     "chart.js": "^3.9.1",
-    "esbuild": "^0.15.11",
-    "nats.ws": "^1.9.0"
+    "esbuild": "^0.15.11"
   }
 }
