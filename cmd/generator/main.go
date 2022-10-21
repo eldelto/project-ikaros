@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"log"
+	"math"
 	"net/url"
 	"time"
 
@@ -12,8 +13,8 @@ import (
 
 const (
 	subject  = "data.generator.sine"
-	minValue = 0.0
-	maxValue = 1.0
+	minValue = -math.Pi
+	maxValue = math.Pi
 	step     = 0.1
 )
 
@@ -37,7 +38,7 @@ func main() {
 			value = minValue
 		}
 
-		dp := dataPoint{value, time.Now()}
+		dp := dataPoint{math.Sin(value), time.Now()}
 		buffer := bytes.Buffer{}
 		if err := json.NewEncoder(&buffer).Encode(dp); err != nil {
 			log.Fatalf("Failed to encode data point: %s", err)
@@ -48,6 +49,6 @@ func main() {
 		}
 
 		value += 0.1
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(50 * time.Millisecond)
 	}
 }
