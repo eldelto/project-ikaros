@@ -2,6 +2,7 @@ import Chart from "chart.js/auto";
 
 window.onload = function () {
   init();
+  connectToWebSocket();
 };
 
 function init() {
@@ -18,4 +19,11 @@ function init() {
   };
 
   const mainGraph = new Chart(ctx, config);
+}
+
+function connectToWebSocket() {
+  const webSocket = new WebSocket("ws://localhost:8080/consumers/ws");
+  webSocket.onmessage = (socket, event) => {
+    console.log(event);
+  };
 }

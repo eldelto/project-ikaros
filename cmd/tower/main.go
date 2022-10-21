@@ -19,6 +19,7 @@ func main() {
 	// Register controllers
 	env.AssetController.Register(r)
 	env.TemplateController.Register(r)
+	env.WebSocketController.Register(r)
 
 	http.Handle("/", r)
 

@@ -15,13 +15,13 @@ func NewTemplateController() *web.Controller {
 	return &web.Controller{
 		BasePath: "/",
 		Handlers: map[web.Endpoint]web.Handler{
-			{Method: "GET", Path: "/"}:                                  GetTemplate,
-			{Method: "GET", Path: "/{" + templatePathUrlParam + ":.*}"}: GetTemplate,
+			{Method: "GET", Path: "/"}:                                  getTemplate,
+			{Method: "GET", Path: "/{" + templatePathUrlParam + ":.*}"}: getTemplate,
 		},
 	}
 }
 
-func GetTemplate(w http.ResponseWriter, r *http.Request) error {
+func getTemplate(w http.ResponseWriter, r *http.Request) error {
 	templatePath := chi.URLParam(r, templatePathUrlParam)
 	if templatePath == "" {
 		templatePath = "index.html"
