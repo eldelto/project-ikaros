@@ -1,8 +1,8 @@
 import Chart from "chart.js/auto";
 
 window.onload = function () {
-  init();
-  connectToWebSocket();
+  const graph = init();
+  connectToWebSocket(graph);
 };
 
 function init() {
@@ -13,17 +13,30 @@ function init() {
     data: {
       datasets: [{
         label: "accelerometer0",
-        data: [{ x: "2016-12-25", y: 20 }, { x: "2016-12-26", y: 10 }]
-      }]
+        borderColor: "#4287f5",
+        backgroundColor: "#4287f5",
+        data: []
+      }],
     },
+    options: {
+      animation: false,
+    }
   };
 
-  const mainGraph = new Chart(ctx, config);
+  return new Chart(ctx, config);
 }
 
-function connectToWebSocket() {
+function connectToWebSocket(graph) {
   const webSocket = new WebSocket("ws://localhost:8080/consumers/ws");
-  webSocket.onmessage = (socket, event) => {
-    console.log(event);
+  webSocket.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    const graphData = graph.data.datasets[0].data;
+
+    graphData.push({ x: data.timestamp, y: data.generator });
+    if (graphData.length > 50) {
+      graphData.shift();
+    }
+
+    graph.update();
   };
 }
