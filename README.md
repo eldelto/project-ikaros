@@ -1,27 +1,37 @@
 
 # Table of Contents
 
-1.  [Project Ikaros](#org8a94662)
-    1.  [Goals](#org068f61c)
-    2.  [Milestones](#org88fd1f3)
-    3.  [Hardware](#org9f8ce23)
-        1.  [uC](#org0192506)
-        2.  [Accelerometer](#orgc0800c2)
-        3.  [Barometer](#org89f7486)
-    4.  [Software Components](#orga79b87c)
-        1.  [Flight Controller](#orgcd51670)
-        2.  [Tower](#orgceefcca)
-        3.  [Random Data Generator](#org2c08429)
-        4.  [Serial Data Relay](#org00a8c2d)
-        5.  [Data Store](#orgaa10051)
+- [Table of Contents](#table-of-contents)
+- [Project Ikaros](#project-ikaros)
+  - [Goals](#goals)
+  - [Milestones](#milestones)
+  - [Hardware](#hardware)
+    - [uC](#uc)
+    - [Accelerometer](#accelerometer)
+    - [Barometer](#barometer)
+  - [Software Components](#software-components)
+    - [Flight Controller](#flight-controller)
+    - [Tower](#tower)
+    - [Random Data Generator](#random-data-generator)
+    - [Serial Data Relay](#serial-data-relay)
+    - [Data Store](#data-store)
+  - [DONE Implement Websocket endpoints](#done-implement-websocket-endpoints)
+  - [DONE Implement Websocket client](#done-implement-websocket-client)
+  - [DONE Implement Websocket data generator](#done-implement-websocket-data-generator)
+  - [DONE Implement continuous graph](#done-implement-continuous-graph)
+  - [TODO Choose a licence](#todo-choose-a-licence)
+  - [TODO Return 404 if a template could not be found](#todo-return-404-if-a-template-could-not-be-found)
+  - [TODO Read accelerometer / gyro data](#todo-read-accelerometer--gyro-data)
+  - [TODO Write sensor data from IC to serial port](#todo-write-sensor-data-from-ic-to-serial-port)
+  - [TODO Read serial port data and forward to websocket](#todo-read-serial-port-data-and-forward-to-websocket)
 
 
-<a id="org8a94662"></a>
+<a id="org3629bde"></a>
 
 # Project Ikaros
 
 
-<a id="org068f61c"></a>
+<a id="org238d6ad"></a>
 
 ## Goals
 
@@ -30,7 +40,7 @@ hardware concepts while trying to build some sort of
 self-stabilizing aerial vehicle (e.g. drone, plane, etc.).
 
 
-<a id="org88fd1f3"></a>
+<a id="org69896d0"></a>
 
 ## Milestones
 
@@ -46,29 +56,29 @@ self-stabilizing aerial vehicle (e.g. drone, plane, etc.).
 -   **TBD**
 
 
-<a id="org9f8ce23"></a>
+<a id="org68e4208"></a>
 
 ## Hardware
 
 Some thoughts on different hardware options that could be used.
 
 
-<a id="org0192506"></a>
+<a id="org0eb35f5"></a>
 
 ### uC
 
 
-<a id="orgc0800c2"></a>
+<a id="org348517b"></a>
 
 ### Accelerometer
 
 
-<a id="org89f7486"></a>
+<a id="org619115a"></a>
 
 ### Barometer
 
 
-<a id="orga79b87c"></a>
+<a id="org015d7ce"></a>
 
 ## Software Components
 
@@ -83,7 +93,7 @@ Some thoughts on different hardware options that could be used.
 -   Serial Data Relay (CLI)
 
 
-<a id="orgcd51670"></a>
+<a id="org348cd15"></a>
 
 ### Flight Controller
 
@@ -102,7 +112,7 @@ want to give Forth a try.
     -   [ ] Controls multiple actuators
 
 
-<a id="orgceefcca"></a>
+<a id="orgfd5c096"></a>
 
 ### Tower
 
@@ -112,7 +122,7 @@ sub-components for further details.
 
 1.  Data Analyzer
 
-    The data analyzer is a web application that visualises sensor data
+    The data analyzer is a web application that visualizes sensor data
     (live or stored).
     
     1.  Features
@@ -121,10 +131,6 @@ sub-components for further details.
             auto-scrolling line graph
         -   [ ] Displays historical data received from its own backend or
             the broker? **TBD**
-    
-    2.  TODO Return 404 if a template could not be found
-    
-    3.  TODO Choose a licence
 
 2.  Message Broker
 
@@ -136,6 +142,15 @@ sub-components for further details.
         -   [ ] Handle basic message fan out
         -   [ ] Require authentication for message posting
         -   [ ] Require authentication for message reading
+    
+    2.  Protocol
+    
+        What kind of actions need to be supported?
+        
+        -   Publish data
+        -   Receive data
+        -   Authenticating as producer (microcontroller) or consumer
+            (web-app)
 
 3.  Data Ingestor
 
@@ -152,7 +167,7 @@ sub-components for further details.
         -   [ ] Persist messages in the Data Store
 
 
-<a id="org2c08429"></a>
+<a id="org7161860"></a>
 
 ### Random Data Generator
 
@@ -165,7 +180,7 @@ submits random data in a specified range.
     -   [ ] Submit a sine wave in a specifiable range
 
 
-<a id="org00a8c2d"></a>
+<a id="org69c9a16"></a>
 
 ### Serial Data Relay
 
@@ -178,7 +193,7 @@ incoming data to the Message Broker.
     -   [ ] Relay data to the Message Broker on a configurable topic
 
 
-<a id="orgaa10051"></a>
+<a id="orgbf43ca8"></a>
 
 ### Data Store
 
@@ -189,4 +204,49 @@ The persistent storage layer of the project.
     -   [ ] Persist sensor data from different sources
     -   [ ] Add proper indices to speed up data retrieval
     -   [ ] Compress the stored data to save disk space
+
+
+<a id="orgda5c0a7"></a>
+
+## DONE Implement Websocket endpoints
+
+
+<a id="org53607f8"></a>
+
+## DONE Implement Websocket client
+
+
+<a id="orgf4c030d"></a>
+
+## DONE Implement Websocket data generator
+
+
+<a id="orge1ccc9f"></a>
+
+## DONE Implement continuous graph
+
+
+<a id="org2e26676"></a>
+
+## TODO Choose a licence
+
+
+<a id="org2818276"></a>
+
+## TODO Return 404 if a template could not be found
+
+
+<a id="org5a71498"></a>
+
+## TODO Read accelerometer / gyro data
+
+
+<a id="org3217ba5"></a>
+
+## TODO Write sensor data from IC to serial port
+
+
+<a id="org8acbcea"></a>
+
+## TODO Read serial port data and forward to websocket
 
