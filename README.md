@@ -1,37 +1,38 @@
 
 # Table of Contents
 
-- [Table of Contents](#table-of-contents)
-- [Project Ikaros](#project-ikaros)
-  - [Goals](#goals)
-  - [Milestones](#milestones)
-  - [Hardware](#hardware)
-    - [uC](#uc)
-    - [Accelerometer](#accelerometer)
-    - [Barometer](#barometer)
-  - [Software Components](#software-components)
-    - [Flight Controller](#flight-controller)
-    - [Tower](#tower)
-    - [Random Data Generator](#random-data-generator)
-    - [Serial Data Relay](#serial-data-relay)
-    - [Data Store](#data-store)
-  - [DONE Implement Websocket endpoints](#done-implement-websocket-endpoints)
-  - [DONE Implement Websocket client](#done-implement-websocket-client)
-  - [DONE Implement Websocket data generator](#done-implement-websocket-data-generator)
-  - [DONE Implement continuous graph](#done-implement-continuous-graph)
-  - [TODO Choose a licence](#todo-choose-a-licence)
-  - [TODO Return 404 if a template could not be found](#todo-return-404-if-a-template-could-not-be-found)
-  - [TODO Read accelerometer / gyro data](#todo-read-accelerometer--gyro-data)
-  - [TODO Write sensor data from IC to serial port](#todo-write-sensor-data-from-ic-to-serial-port)
-  - [TODO Read serial port data and forward to websocket](#todo-read-serial-port-data-and-forward-to-websocket)
+1.  [Project Ikaros](#org3e6990c)
+    1.  [Goals](#orga4552a2)
+    2.  [Milestones](#orgeaedaa2)
+    3.  [Hardware](#org3a2616c)
+        1.  [uC](#orgf0317a4)
+        2.  [Accelerometer](#org917a9cd)
+        3.  [Barometer](#orgd30ed95)
+    4.  [Software Components](#orge627112)
+        1.  [Flight Controller](#org9cd0352)
+        2.  [Tower](#org3e7170b)
+        3.  [Random Data Generator](#org7a94c5f)
+        4.  [Serial Data Relay](#org51902c8)
+        5.  [Data Store](#org934b92c)
+    5.  [Implement Websocket endpoints](#org77cbaff)
+    6.  [Implement Websocket client](#org34b419b)
+    7.  [Implement Websocket data generator](#org56ce960)
+    8.  [Implement continuous graph](#org5101aa7)
+    9.  [Choose hardware](#org0e2a554)
+    10. [Choose a licence](#orga010bd9)
+    11. [Return 404 if a template could not be found](#orgdb1c0c6)
+    12. [Read gyro data from sensor](#orgdc102be)
+    13. [Write sensor data from IC to serial port](#org3b867a2)
+    14. [Read serial port data and forward to websocket](#orgd30c12c)
+    15. [Compute 3D fusion algorithm on MPU-6050](#org9c9d62f)
 
 
-<a id="org3629bde"></a>
+<a id="org3e6990c"></a>
 
 # Project Ikaros
 
 
-<a id="org238d6ad"></a>
+<a id="orga4552a2"></a>
 
 ## Goals
 
@@ -40,7 +41,7 @@ hardware concepts while trying to build some sort of
 self-stabilizing aerial vehicle (e.g. drone, plane, etc.).
 
 
-<a id="org69896d0"></a>
+<a id="orgeaedaa2"></a>
 
 ## Milestones
 
@@ -56,29 +57,62 @@ self-stabilizing aerial vehicle (e.g. drone, plane, etc.).
 -   **TBD**
 
 
-<a id="org68e4208"></a>
+<a id="org3a2616c"></a>
 
 ## Hardware
 
 Some thoughts on different hardware options that could be used.
 
 
-<a id="org0eb35f5"></a>
+<a id="orgf0317a4"></a>
 
 ### uC
 
+Possible microcontrollers to execute the control loop on.
 
-<a id="org348517b"></a>
+1.  Raspberry Pi RP2040
+
+    The [RP2040](https://www.raspberrypi.com/products/rp2040/) is an ARM Cortex MO+ based processor with two cores
+    and plenty of other features.
+    
+    The documentation is pretty great and it ships with a dedicated
+    C/C++ SDK including a CLI tool to upload new firmware which
+    makes integration with the existing project quite easy. It also
+    has a whopping 16 PWM channels and 8 PIO state machines which
+    are a quite unique feature and for sure interesting to play
+    around. There are different breakout boards available (even one
+    with WIFI which could be interesting). Price wise those breakout
+    boards are also a lot cheaper than for example competing
+    Adafruit projects. Costing only around 5 € (or 8 € with WIFI).
+
+
+<a id="org917a9cd"></a>
 
 ### Accelerometer
 
+Possible accelerometer sensors.
 
-<a id="org619115a"></a>
+1.  Invensense MPU-6050
+
+    The [MPU-6050](https://invensense.tdk.com/products/motion-tracking/6-axis/mpu-6050/) is a 6-axis gyro/accelerometer combi chip that also
+    features a basic temperature sensor. It can be addressed via SPI
+    or I2C.
+    
+    Invensense states that this chip is already obsolete and
+    shouldn't be used for new projects but it still looks like a
+    good choice, is widely available and pretty cheap (breakout
+    boards go for under 10 €). A big plus is the built in digital
+    motion processor (DMP) which basically is a small chip that can
+    calculate motion fusion algorithms on the sensor itself, freeing
+    up resources on the main uC.
+
+
+<a id="orgd30ed95"></a>
 
 ### Barometer
 
 
-<a id="org015d7ce"></a>
+<a id="orge627112"></a>
 
 ## Software Components
 
@@ -93,7 +127,7 @@ Some thoughts on different hardware options that could be used.
 -   Serial Data Relay (CLI)
 
 
-<a id="org348cd15"></a>
+<a id="org9cd0352"></a>
 
 ### Flight Controller
 
@@ -112,7 +146,7 @@ want to give Forth a try.
     -   [ ] Controls multiple actuators
 
 
-<a id="orgfd5c096"></a>
+<a id="org3e7170b"></a>
 
 ### Tower
 
@@ -167,7 +201,7 @@ sub-components for further details.
         -   [ ] Persist messages in the Data Store
 
 
-<a id="org7161860"></a>
+<a id="org7a94c5f"></a>
 
 ### Random Data Generator
 
@@ -180,7 +214,7 @@ submits random data in a specified range.
     -   [ ] Submit a sine wave in a specifiable range
 
 
-<a id="org69c9a16"></a>
+<a id="org51902c8"></a>
 
 ### Serial Data Relay
 
@@ -193,7 +227,7 @@ incoming data to the Message Broker.
     -   [ ] Relay data to the Message Broker on a configurable topic
 
 
-<a id="orgbf43ca8"></a>
+<a id="org934b92c"></a>
 
 ### Data Store
 
@@ -206,47 +240,56 @@ The persistent storage layer of the project.
     -   [ ] Compress the stored data to save disk space
 
 
-<a id="orgda5c0a7"></a>
+<a id="org77cbaff"></a>
 
 ## DONE Implement Websocket endpoints
 
 
-<a id="org53607f8"></a>
+<a id="org34b419b"></a>
 
 ## DONE Implement Websocket client
 
 
-<a id="orgf4c030d"></a>
+<a id="org56ce960"></a>
 
 ## DONE Implement Websocket data generator
 
 
-<a id="orge1ccc9f"></a>
+<a id="org5101aa7"></a>
 
 ## DONE Implement continuous graph
 
 
-<a id="org2e26676"></a>
+<a id="org0e2a554"></a>
 
-## TODO Choose a licence
+## DONE Choose hardware
 
 
-<a id="org2818276"></a>
+<a id="orga010bd9"></a>
+
+## DONE Choose a licence
+
+
+<a id="orgdb1c0c6"></a>
 
 ## TODO Return 404 if a template could not be found
 
 
-<a id="org5a71498"></a>
+<a id="orgdc102be"></a>
 
-## TODO Read accelerometer / gyro data
+## TODO Read gyro data from sensor
 
 
-<a id="org3217ba5"></a>
+<a id="org3b867a2"></a>
 
 ## TODO Write sensor data from IC to serial port
 
 
-<a id="org8acbcea"></a>
+<a id="orgd30c12c"></a>
 
 ## TODO Read serial port data and forward to websocket
 
+
+<a id="org9c9d62f"></a>
+
+## TODO Compute 3D fusion algorithm on MPU-6050
