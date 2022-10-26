@@ -32,7 +32,7 @@ function connectToWebSocket(graph) {
     const data = JSON.parse(event.data);
     const graphData = graph.data.datasets[0].data;
 
-    graphData.push({ x: data.timestamp, y: data.generator });
+    graphData.push({ x: data.timestamp, y: data.gyroPitch });
     if (graphData.length > 100) {
       graphData.shift();
     }

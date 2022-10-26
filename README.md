@@ -1,38 +1,39 @@
 
 # Table of Contents
 
-1.  [Project Ikaros](#org3e6990c)
-    1.  [Goals](#orga4552a2)
-    2.  [Milestones](#orgeaedaa2)
-    3.  [Hardware](#org3a2616c)
-        1.  [uC](#orgf0317a4)
-        2.  [Accelerometer](#org917a9cd)
-        3.  [Barometer](#orgd30ed95)
-    4.  [Software Components](#orge627112)
-        1.  [Flight Controller](#org9cd0352)
-        2.  [Tower](#org3e7170b)
-        3.  [Random Data Generator](#org7a94c5f)
-        4.  [Serial Data Relay](#org51902c8)
-        5.  [Data Store](#org934b92c)
-    5.  [Implement Websocket endpoints](#org77cbaff)
-    6.  [Implement Websocket client](#org34b419b)
-    7.  [Implement Websocket data generator](#org56ce960)
-    8.  [Implement continuous graph](#org5101aa7)
-    9.  [Choose hardware](#org0e2a554)
-    10. [Choose a licence](#orga010bd9)
-    11. [Return 404 if a template could not be found](#orgdb1c0c6)
-    12. [Read gyro data from sensor](#orgdc102be)
-    13. [Write sensor data from IC to serial port](#org3b867a2)
-    14. [Read serial port data and forward to websocket](#orgd30c12c)
-    15. [Compute 3D fusion algorithm on MPU-6050](#org9c9d62f)
+1.  [Project Ikaros](#org235d507)
+    1.  [Goals](#org53c7828)
+    2.  [Milestones](#orgee8ecf2)
+    3.  [Hardware](#orgf95a137)
+        1.  [uC](#orgeca5229)
+        2.  [Accelerometer](#org54a16d7)
+        3.  [Barometer](#orgf102a73)
+    4.  [Software Components](#orgea57c3b)
+        1.  [Flight Controller](#orgbc5e8ec)
+        2.  [Tower](#org20445c7)
+        3.  [Random Data Generator](#orgb078b4b)
+        4.  [Serial Data Relay](#orgf6f02d6)
+        5.  [Data Store](#orgc8fc273)
+        6.  [CSM - Comma Separated Map](#orga1a170d)
+    5.  [Implement Websocket endpoints](#orgdfbad40)
+    6.  [Implement Websocket client](#orga39a799)
+    7.  [Implement Websocket data generator](#org8494bab)
+    8.  [Implement continuous graph](#org543c83e)
+    9.  [Choose hardware](#org1ff0f7a)
+    10. [Choose a licence](#org92ada19)
+    11. [Read serial port data and forward to websocket](#org0f44f85)
+    12. [Return 404 if a template could not be found](#org80a5d61)
+    13. [Read gyro data from sensor](#org08b27ad)
+    14. [Write sensor data from IC to serial port](#org2c233fb)
+    15. [Compute 3D fusion algorithm on MPU-6050](#orgecb943a)
 
 
-<a id="org3e6990c"></a>
+<a id="org235d507"></a>
 
 # Project Ikaros
 
 
-<a id="orga4552a2"></a>
+<a id="org53c7828"></a>
 
 ## Goals
 
@@ -41,14 +42,14 @@ hardware concepts while trying to build some sort of
 self-stabilizing aerial vehicle (e.g. drone, plane, etc.).
 
 
-<a id="orgeaedaa2"></a>
+<a id="orgee8ecf2"></a>
 
 ## Milestones
 
--   [ ] Choose hardware (main uC, accelerometer, barometer, motors,
+-   [X] Choose hardware (main uC, accelerometer, barometer, motors,
     props)
--   [ ] Choose software stack (uC, base station, persistence)
--   [ ] Display fake sensor data
+-   [X] Choose software stack (uC, base station, persistence)
+-   [X] Display fake sensor data
 -   [ ] Display live sensor data
 -   [ ] Get reliable sensor readings under motor vibrations
 -   [ ] Persist sensor data and display historical data
@@ -57,14 +58,14 @@ self-stabilizing aerial vehicle (e.g. drone, plane, etc.).
 -   **TBD**
 
 
-<a id="org3a2616c"></a>
+<a id="orgf95a137"></a>
 
 ## Hardware
 
 Some thoughts on different hardware options that could be used.
 
 
-<a id="orgf0317a4"></a>
+<a id="orgeca5229"></a>
 
 ### uC
 
@@ -86,7 +87,7 @@ Possible microcontrollers to execute the control loop on.
     Adafruit projects. Costing only around 5 € (or 8 € with WIFI).
 
 
-<a id="org917a9cd"></a>
+<a id="org54a16d7"></a>
 
 ### Accelerometer
 
@@ -107,12 +108,12 @@ Possible accelerometer sensors.
     up resources on the main uC.
 
 
-<a id="orgd30ed95"></a>
+<a id="orgf102a73"></a>
 
 ### Barometer
 
 
-<a id="orge627112"></a>
+<a id="orgea57c3b"></a>
 
 ## Software Components
 
@@ -127,7 +128,7 @@ Possible accelerometer sensors.
 -   Serial Data Relay (CLI)
 
 
-<a id="org9cd0352"></a>
+<a id="orgbc5e8ec"></a>
 
 ### Flight Controller
 
@@ -146,7 +147,7 @@ want to give Forth a try.
     -   [ ] Controls multiple actuators
 
 
-<a id="org3e7170b"></a>
+<a id="org20445c7"></a>
 
 ### Tower
 
@@ -201,7 +202,7 @@ sub-components for further details.
         -   [ ] Persist messages in the Data Store
 
 
-<a id="org7a94c5f"></a>
+<a id="orgb078b4b"></a>
 
 ### Random Data Generator
 
@@ -214,7 +215,7 @@ submits random data in a specified range.
     -   [ ] Submit a sine wave in a specifiable range
 
 
-<a id="org51902c8"></a>
+<a id="orgf6f02d6"></a>
 
 ### Serial Data Relay
 
@@ -227,7 +228,7 @@ incoming data to the Message Broker.
     -   [ ] Relay data to the Message Broker on a configurable topic
 
 
-<a id="org934b92c"></a>
+<a id="orgc8fc273"></a>
 
 ### Data Store
 
@@ -240,56 +241,92 @@ The persistent storage layer of the project.
     -   [ ] Compress the stored data to save disk space
 
 
-<a id="org77cbaff"></a>
+<a id="orga1a170d"></a>
+
+### CSM - Comma Separated Map
+
+CSM is a minimalistic data exchange format that allows to
+transmit key/value pairs.
+
+This exchange format is motivated by the need to transmit
+key/value data without needing a full JSON parser running on an
+embedded device. Therefore the main goal is ease of parsing and
+resource efficient serialization/deserialization.
+
+1.  Specification
+
+    Messages are treated as UTF-8 encoded strings. Each key has to
+    be parsed as a string as are the values. Conversion to different
+    value types are up to the consuming client. Keys and values are
+    separated by `=` whereas each pair is seperated by a single
+    `;`. The end of the messages is signalled by a line feed
+    character (`\n`).
+    
+    A simple example:
+    
+        type=sensorData;gyro=123;accel=456\n
+    
+    A parser can then transform this input into the following map
+    (depicted as JSON):
+    
+        {
+            "type": "sensorData",
+            "gyro": "123",
+            "accel": "456"
+        }
+
+
+<a id="orgdfbad40"></a>
 
 ## DONE Implement Websocket endpoints
 
 
-<a id="org34b419b"></a>
+<a id="orga39a799"></a>
 
 ## DONE Implement Websocket client
 
 
-<a id="org56ce960"></a>
+<a id="org8494bab"></a>
 
 ## DONE Implement Websocket data generator
 
 
-<a id="org5101aa7"></a>
+<a id="org543c83e"></a>
 
 ## DONE Implement continuous graph
 
 
-<a id="org0e2a554"></a>
+<a id="org1ff0f7a"></a>
 
 ## DONE Choose hardware
 
 
-<a id="orga010bd9"></a>
+<a id="org92ada19"></a>
 
 ## DONE Choose a licence
 
 
-<a id="orgdb1c0c6"></a>
+<a id="org0f44f85"></a>
+
+## DONE Read serial port data and forward to websocket
+
+
+<a id="org80a5d61"></a>
 
 ## TODO Return 404 if a template could not be found
 
 
-<a id="orgdc102be"></a>
+<a id="org08b27ad"></a>
 
 ## TODO Read gyro data from sensor
 
 
-<a id="org3b867a2"></a>
+<a id="org2c233fb"></a>
 
 ## TODO Write sensor data from IC to serial port
 
 
-<a id="orgd30c12c"></a>
-
-## TODO Read serial port data and forward to websocket
-
-
-<a id="org9c9d62f"></a>
+<a id="orgecb943a"></a>
 
 ## TODO Compute 3D fusion algorithm on MPU-6050
+

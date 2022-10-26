@@ -1,5 +1,5 @@
 .PHONY: build
-build: bin/tower bin/generator
+build: bin/tower bin/generator bin/serial-relay
 
 bin/tower: .FORCE internal/tower/api/assets/index.js
 	@go build -o bin/tower cmd/tower/main.go
@@ -10,6 +10,9 @@ internal/tower/api/assets/index.js: $(wildcard analyzer-web/*.js)
 
 bin/generator: .FORCE
 	@go build -o bin/generator cmd/generator/main.go
+
+bin/serial-relay: .FORCE
+	@go build -o bin/serial-relay cmd/serial-relay/main.go
 
 .PHONY: download
 download:

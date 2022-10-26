@@ -8,9 +8,11 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/websocket v1.5.0
 	github.com/kyoh86/richgo v0.3.10
+	go.bug.st/serial v1.4.0
 )
 
 require (
+	github.com/creack/goselect v0.1.2 // indirect
 	github.com/creack/pty v1.1.11 // indirect
 	github.com/fsnotify/fsnotify v1.4.7 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
