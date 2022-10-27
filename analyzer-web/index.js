@@ -20,6 +20,13 @@ function init() {
     },
     options: {
       animation: false,
+      normalized: true,
+      spanGaps: true,
+      elements: {
+        point: {
+          radius: 0
+        }
+      }
     }
   };
 
@@ -32,8 +39,8 @@ function connectToWebSocket(graph) {
     const data = JSON.parse(event.data);
     const graphData = graph.data.datasets[0].data;
 
-    graphData.push({ x: data.timestamp, y: data.gyroPitch });
-    if (graphData.length > 100) {
+    graphData.push({ x: data.timestamp, y: data.generator });
+    if (graphData.length > 500) {
       graphData.shift();
     }
 
