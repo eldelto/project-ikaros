@@ -19,7 +19,7 @@ download:
 	@echo Download go.mod dependencies
 	@go mod download
 
-.PHONY: install-tools
+.PHONY: init
 install-tools: download
 	@echo Installing tools from tools.go
 	@cat tools.go | grep _ | awk -F'"' '{print $$2}' | xargs -tI % go install %
