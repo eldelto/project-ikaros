@@ -16,12 +16,11 @@ bin/serial-relay: .FORCE
 
 .PHONY: download
 download:
-	@echo Download go.mod dependencies
 	@go mod download
+	@npm install --prefix analyzer-web/
 
 .PHONY: init
 init: download
-	@echo Installing tools from tools.go
 	@cat tools.go | grep _ | awk -F'"' '{print $$2}' | xargs -tI % go install %
 
 .PHONY: run
