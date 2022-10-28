@@ -26,7 +26,7 @@ install-tools: download
 
 .PHONY: run
 run: build
-	@echo Starting Tower
+	@echo Starting Tower ...
 	@bin/tower
 
 .PHONY: run-loop
@@ -34,9 +34,15 @@ run-loop:
 	@reflex -r "\.(go|html|css|js)$$" -R ".*node_modules.*" -s make run
 
 .PHONY: test
-test:
-	@echo Testing Pythia
+test: lint
+	@echo Testing ...
 	@richgo test ./...
+
+.PHONY: lint
+lint:
+	@go mod tidy
+	@go fmt ./...
+	@go vet ./...
 
 .PHONY: test-loop
 test-loop:
