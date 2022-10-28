@@ -23,25 +23,25 @@ jobs:
         file: ./Dockerfile
         push: true
         tags: ${{ secrets.DOCKER_HUB_USERNAME }}/tower:latest
-    # - name: Copy Deployment Artifacts to Node
-    #   uses: appleboy/scp-action@master
-    #   with:
-    #     host: ${{ secrets.HOST }}
-    #     port: ${{ secrets.PORT }}
-    #     username: ${{ secrets.SSH_USER }}
-    #     key: ${{ secrets.SSH_PRIVATE_KEY }}
-    #     source: "deploy/docker-compose.yml"
-    #     target: "/opt/tower/"
-    # - name: Restart Service
-    #   uses: appleboy/ssh-action@master
-    #   with:
-    #     host: ${{ secrets.HOST }}
-    #     port: ${{ secrets.PORT }}
-    #     username: ${{ secrets.SSH_USER }}
-    #     key: ${{ secrets.SSH_PRIVATE_KEY }}
-    #     script_stop: true
-    #     script: |
-    #       cd /opt/tower/deploy 
-    #       docker login --username ${{ secrets.DOCKER_HUB_USERNAME }} --password ${{ secrets.DOCKER_HUB_RO_ACCESS_TOKEN }}
-    #       docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/tower:latest
-    #       docker-compose down && docker-compose up -d
+    - name: Copy Deployment Artifacts to Node
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        port: ${{ secrets.PORT }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        source: "deploy/docker-compose.yml"
+        target: "/opt/tower/"
+    - name: Restart Service
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        port: ${{ secrets.PORT }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script_stop: true
+        script: |
+          cd /opt/tower/deploy 
+          docker login --username ${{ secrets.DOCKER_HUB_USERNAME }} --password ${{ secrets.DOCKER_HUB_ACCESS_TOKEN_RO }}
+          docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/tower:latest
+          docker-compose down && docker-compose up -d

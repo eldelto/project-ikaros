@@ -40,7 +40,7 @@ function connectToWebSocket(graph) {
     const graphData = graph.data.datasets[0].data;
 
     graphData.push({ x: data.timestamp, y: data.generator });
-    if (graphData.length > 500) {
+    if (graphData.length > 200) {
       graphData.shift();
     }
 

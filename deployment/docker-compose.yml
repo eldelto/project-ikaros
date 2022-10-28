@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  closing-loop:
+    image: eldelto/tower:latest
+    environment:
+    networks:
+      - tower_net
+      - caddy_net
+    expose:
+      - 8080
+    restart: always
+
+networks:
+  eldelto_net:
+  caddy_net:
+    name: caddy_net
+    external: true
