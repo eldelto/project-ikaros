@@ -34,7 +34,7 @@ function init() {
 }
 
 function connectToWebSocket(graph) {
-  const webSocket = new WebSocket("ws://localhost:8080/consumers/ws");
+  const webSocket = new WebSocket(constructWebsocketUrl("/consumers/ws"));
   webSocket.onmessage = (event) => {
     const data = JSON.parse(event.data);
     const graphData = graph.data.datasets[0].data;
@@ -46,4 +46,11 @@ function connectToWebSocket(graph) {
 
     graph.update();
   };
+}
+
+function constructWebsocketUrl(endpoint) {
+  const host = window.location.host;
+  const wsProtocol = window.location.protocol == "https" ? "wss" : "ws";
+
+  return wsProtocol + "://" + host + endpoint;
 }
