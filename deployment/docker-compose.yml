@@ -1,9 +1,8 @@
 version: "3.5"
 
 services:
-  closing-loop:
+  tower:
     image: eldelto/tower:latest
-    environment:
     networks:
       - tower_net
       - caddy_net
