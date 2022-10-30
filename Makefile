@@ -46,7 +46,7 @@ lint:
 .PHONY: test-loop
 test-loop:
 	@echo Waiting for file changes ...
-	@reflex -r '\.go$$' make test
+	@reflex -r "\.(go|html|css|js)$$" -R ".*node_modules.*" make test
 
 .PHONY: clean
 clean:

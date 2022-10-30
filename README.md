@@ -1,39 +1,43 @@
 
 # Table of Contents
 
-1.  [Project Ikaros](#org235d507)
-    1.  [Goals](#org53c7828)
-    2.  [Milestones](#orgee8ecf2)
-    3.  [Hardware](#orgf95a137)
-        1.  [uC](#orgeca5229)
-        2.  [Accelerometer](#org54a16d7)
-        3.  [Barometer](#orgf102a73)
-    4.  [Software Components](#orgea57c3b)
-        1.  [Flight Controller](#orgbc5e8ec)
-        2.  [Tower](#org20445c7)
-        3.  [Random Data Generator](#orgb078b4b)
-        4.  [Serial Data Relay](#orgf6f02d6)
-        5.  [Data Store](#orgc8fc273)
-        6.  [CSM - Comma Separated Map](#orga1a170d)
-    5.  [Implement Websocket endpoints](#orgdfbad40)
-    6.  [Implement Websocket client](#orga39a799)
-    7.  [Implement Websocket data generator](#org8494bab)
-    8.  [Implement continuous graph](#org543c83e)
-    9.  [Choose hardware](#org1ff0f7a)
-    10. [Choose a licence](#org92ada19)
-    11. [Read serial port data and forward to websocket](#org0f44f85)
-    12. [Return 404 if a template could not be found](#org80a5d61)
-    13. [Read gyro data from sensor](#org08b27ad)
-    14. [Write sensor data from IC to serial port](#org2c233fb)
-    15. [Compute 3D fusion algorithm on MPU-6050](#orgecb943a)
+1.  [Project Ikaros](#org96fb5bb)
+    1.  [Goals](#orgbf5f32e)
+    2.  [Milestones](#org2829b0a)
+    3.  [Getting Started](#org2c3bf2e)
+        1.  [Prerequisites](#orgc9b9a5f)
+        2.  [Compilation](#org322e8c2)
+        3.  [Useful Make Targets](#orgbbac281)
+    4.  [Hardware](#orgaca2fb3)
+        1.  [uC](#org6b59361)
+        2.  [Accelerometer](#org56d4250)
+        3.  [Barometer](#org83cf96b)
+    5.  [Software Components](#org6ae746d)
+        1.  [Flight Controller](#org3a7d042)
+        2.  [Tower](#org702c375)
+        3.  [Random Data Generator](#org5ea4cc1)
+        4.  [Serial Data Relay](#org7688c2e)
+        5.  [Data Store](#org7466cd4)
+        6.  [CSM - Comma Separated Map](#org4ba559c)
+    6.  [Implement Websocket endpoints](#orgaa70d50)
+    7.  [Implement Websocket client](#orgb0f70ad)
+    8.  [Implement Websocket data generator](#org55fe788)
+    9.  [Implement continuous graph](#orgccefebf)
+    10. [Choose hardware](#org96aa391)
+    11. [Choose a licence](#org062094b)
+    12. [Read serial port data and forward to websocket](#org62f5f0e)
+    13. [Return 404 if a template could not be found](#org8017e5a)
+    14. [Read gyro data from sensor](#org696e236)
+    15. [Write sensor data from IC to serial port](#org7be564b)
+    16. [Compute 3D fusion algorithm on MPU-6050](#org0a3e1cf)
 
 
-<a id="org235d507"></a>
+<a id="org96fb5bb"></a>
 
 # Project Ikaros
 
 
-<a id="org53c7828"></a>
+<a id="orgbf5f32e"></a>
 
 ## Goals
 
@@ -42,7 +46,7 @@ hardware concepts while trying to build some sort of
 self-stabilizing aerial vehicle (e.g. drone, plane, etc.).
 
 
-<a id="orgee8ecf2"></a>
+<a id="org2829b0a"></a>
 
 ## Milestones
 
@@ -58,14 +62,109 @@ self-stabilizing aerial vehicle (e.g. drone, plane, etc.).
 -   **TBD**
 
 
-<a id="orgf95a137"></a>
+<a id="org2c3bf2e"></a>
+
+## Getting Started
+
+A quick guide to get the project up and running.
+
+
+<a id="orgc9b9a5f"></a>
+
+### Prerequisites
+
+The following software packages need to be installed to
+successfully compile the project:
+
+-   [NodeJS](https://nodejs.org/en/download/) >= v18
+-   [Go](https://go.dev/doc/install) >= 1.19
+-   Make (should come preinstalled on most UNIX systems)
+
+
+<a id="org322e8c2"></a>
+
+### Compilation
+
+To download all dependencies and initialize the project run `make
+     init`. This will download Go dependencies, required npm packages
+and some additional tools. Running `make` in the project root
+will compile all subprojects and output their binaries to `bin/`.
+
+
+<a id="orgbbac281"></a>
+
+### Useful Make Targets
+
+A short reference on the most used make targets:
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Target</th>
+<th scope="col" class="org-left">Description</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td class="org-left">make init</td>
+<td class="org-left">Download dependencies and tools</td>
+</tr>
+
+
+<tr>
+<td class="org-left">make</td>
+<td class="org-left">Compile all subprojects</td>
+</tr>
+
+
+<tr>
+<td class="org-left">make run</td>
+<td class="org-left">Runs the tower backend</td>
+</tr>
+
+
+<tr>
+<td class="org-left">make test</td>
+<td class="org-left">Runs tests for all subprojects</td>
+</tr>
+
+
+<tr>
+<td class="org-left">make run-loop</td>
+<td class="org-left">Runs the tower backend and restarts it on file changes</td>
+</tr>
+
+
+<tr>
+<td class="org-left">make test-loop</td>
+<td class="org-left">Runs tests for all subprojects and reruns them on file changes</td>
+</tr>
+
+
+<tr>
+<td class="org-left">make clean</td>
+<td class="org-left">Deletes bin/*</td>
+</tr>
+</tbody>
+</table>
+
+
+<a id="orgaca2fb3"></a>
 
 ## Hardware
 
 Some thoughts on different hardware options that could be used.
 
 
-<a id="orgeca5229"></a>
+<a id="org6b59361"></a>
 
 ### uC
 
@@ -87,7 +186,7 @@ Possible microcontrollers to execute the control loop on.
     Adafruit projects. Costing only around 5 € (or 8 € with WIFI).
 
 
-<a id="org54a16d7"></a>
+<a id="org56d4250"></a>
 
 ### Accelerometer
 
@@ -108,12 +207,12 @@ Possible accelerometer sensors.
     up resources on the main uC.
 
 
-<a id="orgf102a73"></a>
+<a id="org83cf96b"></a>
 
 ### Barometer
 
 
-<a id="orgea57c3b"></a>
+<a id="org6ae746d"></a>
 
 ## Software Components
 
@@ -128,7 +227,7 @@ Possible accelerometer sensors.
 -   Serial Data Relay (CLI)
 
 
-<a id="orgbc5e8ec"></a>
+<a id="org3a7d042"></a>
 
 ### Flight Controller
 
@@ -147,7 +246,7 @@ want to give Forth a try.
     -   [ ] Controls multiple actuators
 
 
-<a id="org20445c7"></a>
+<a id="org702c375"></a>
 
 ### Tower
 
@@ -202,7 +301,7 @@ sub-components for further details.
         -   [ ] Persist messages in the Data Store
 
 
-<a id="orgb078b4b"></a>
+<a id="org5ea4cc1"></a>
 
 ### Random Data Generator
 
@@ -215,7 +314,7 @@ submits random data in a specified range.
     -   [ ] Submit a sine wave in a specifiable range
 
 
-<a id="orgf6f02d6"></a>
+<a id="org7688c2e"></a>
 
 ### Serial Data Relay
 
@@ -228,7 +327,7 @@ incoming data to the Message Broker.
     -   [ ] Relay data to the Message Broker on a configurable topic
 
 
-<a id="orgc8fc273"></a>
+<a id="org7466cd4"></a>
 
 ### Data Store
 
@@ -241,7 +340,7 @@ The persistent storage layer of the project.
     -   [ ] Compress the stored data to save disk space
 
 
-<a id="orga1a170d"></a>
+<a id="org4ba559c"></a>
 
 ### CSM - Comma Separated Map
 
@@ -276,57 +375,57 @@ resource efficient serialization/deserialization.
         }
 
 
-<a id="orgdfbad40"></a>
+<a id="orgaa70d50"></a>
 
 ## DONE Implement Websocket endpoints
 
 
-<a id="orga39a799"></a>
+<a id="orgb0f70ad"></a>
 
 ## DONE Implement Websocket client
 
 
-<a id="org8494bab"></a>
+<a id="org55fe788"></a>
 
 ## DONE Implement Websocket data generator
 
 
-<a id="org543c83e"></a>
+<a id="orgccefebf"></a>
 
 ## DONE Implement continuous graph
 
 
-<a id="org1ff0f7a"></a>
+<a id="org96aa391"></a>
 
 ## DONE Choose hardware
 
 
-<a id="org92ada19"></a>
+<a id="org062094b"></a>
 
 ## DONE Choose a licence
 
 
-<a id="org0f44f85"></a>
+<a id="org62f5f0e"></a>
 
 ## DONE Read serial port data and forward to websocket
 
 
-<a id="org80a5d61"></a>
+<a id="org8017e5a"></a>
 
 ## TODO Return 404 if a template could not be found
 
 
-<a id="org08b27ad"></a>
+<a id="org696e236"></a>
 
 ## TODO Read gyro data from sensor
 
 
-<a id="org2c233fb"></a>
+<a id="org7be564b"></a>
 
 ## TODO Write sensor data from IC to serial port
 
 
-<a id="orgecb943a"></a>
+<a id="org0a3e1cf"></a>
 
 ## TODO Compute 3D fusion algorithm on MPU-6050
 
