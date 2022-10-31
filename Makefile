@@ -1,5 +1,5 @@
 .PHONY: build
-build: bin/tower bin/generator bin/serial-relay
+build: bin/tower bin/generator bin/serial-relay bin/flight-controller.uf2
 
 bin/tower: .FORCE internal/tower/api/assets/index.js
 	@go build -o bin/tower cmd/tower/main.go
@@ -51,5 +51,24 @@ test-loop:
 .PHONY: clean
 clean:
 	@rm bin/*
+
+flight-controller/build/Makefile:
+	@export PICO_SDK_PATH=~/Documents/workspace/pico/pico-sdk
+	@export PICO_BOARD=pico_w
+	@cd flight-controller; \
+	mkdir -p build; \
+	cd build; \
+	cmake ..
+
+bin/flight-controller.uf2: flight-controller/build/Makefile $(wildcard flight-controller/*.c)
+	@cd flight-controller/build; \
+	make; \
+	cp blink.uf2 ../../bin/flight-controller.uf2
+
+.PHONY: flash-pico
+flash-pico: bin/flight-controller.uf2
+	@export PICO_SDK_PATH=~/Documents/workspace/pico/pico-sdk
+	@export PICO_BOARD=pico_w
+	@picotool load -f bin/flight-controller.uf2
 
 .FORCE:
