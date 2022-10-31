@@ -6,7 +6,7 @@ WORKDIR /go/src/app
 COPY . .
 
 RUN make init
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 make
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 make bin/tower
 
 FROM gcr.io/distroless/static-debian11
 
