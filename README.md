@@ -1,43 +1,32 @@
 
 # Table of Contents
 
-1.  [Project Ikaros](#org96fb5bb)
-    1.  [Goals](#orgbf5f32e)
-    2.  [Milestones](#org2829b0a)
-    3.  [Getting Started](#org2c3bf2e)
-        1.  [Prerequisites](#orgc9b9a5f)
-        2.  [Compilation](#org322e8c2)
-        3.  [Useful Make Targets](#orgbbac281)
-    4.  [Hardware](#orgaca2fb3)
-        1.  [uC](#org6b59361)
-        2.  [Accelerometer](#org56d4250)
-        3.  [Barometer](#org83cf96b)
-    5.  [Software Components](#org6ae746d)
-        1.  [Flight Controller](#org3a7d042)
-        2.  [Tower](#org702c375)
-        3.  [Random Data Generator](#org5ea4cc1)
-        4.  [Serial Data Relay](#org7688c2e)
-        5.  [Data Store](#org7466cd4)
-        6.  [CSM - Comma Separated Map](#org4ba559c)
-    6.  [Implement Websocket endpoints](#orgaa70d50)
-    7.  [Implement Websocket client](#orgb0f70ad)
-    8.  [Implement Websocket data generator](#org55fe788)
-    9.  [Implement continuous graph](#orgccefebf)
-    10. [Choose hardware](#org96aa391)
-    11. [Choose a licence](#org062094b)
-    12. [Read serial port data and forward to websocket](#org62f5f0e)
-    13. [Return 404 if a template could not be found](#org8017e5a)
-    14. [Read gyro data from sensor](#org696e236)
-    15. [Write sensor data from IC to serial port](#org7be564b)
-    16. [Compute 3D fusion algorithm on MPU-6050](#org0a3e1cf)
+1.  [Project Ikaros](#orga8c8b6e)
+    1.  [Goals](#orgbcbc656)
+    2.  [Milestones](#org9cfc62c)
+    3.  [Getting Started](#org5700798)
+        1.  [Prerequisites](#org6d730b7)
+        2.  [Compilation](#org5ec83ab)
+        3.  [Useful Make Targets](#org5e4f816)
+    4.  [Hardware](#org05ee2ab)
+        1.  [uC](#org0fc953a)
+        2.  [Accelerometer](#org69409d8)
+        3.  [Barometer](#orgc197c54)
+    5.  [Software Components](#org2539df7)
+        1.  [Flight Controller](#org9665209)
+        2.  [Tower](#org0175f63)
+        3.  [Random Data Generator](#orgfb90de2)
+        4.  [Serial Data Relay](#orga3e13e6)
+        5.  [Data Store](#org86b334c)
+        6.  [CSM - Comma Separated Map](#org1c4ed2d)
 
 
-<a id="org96fb5bb"></a>
+<a id="orga8c8b6e"></a>
 
 # Project Ikaros
 
 
-<a id="orgbf5f32e"></a>
+<a id="orgbcbc656"></a>
 
 ## Goals
 
@@ -46,7 +35,7 @@ hardware concepts while trying to build some sort of
 self-stabilizing aerial vehicle (e.g. drone, plane, etc.).
 
 
-<a id="org2829b0a"></a>
+<a id="org9cfc62c"></a>
 
 ## Milestones
 
@@ -62,14 +51,14 @@ self-stabilizing aerial vehicle (e.g. drone, plane, etc.).
 -   **TBD**
 
 
-<a id="org2c3bf2e"></a>
+<a id="org5700798"></a>
 
 ## Getting Started
 
 A quick guide to get the project up and running.
 
 
-<a id="orgc9b9a5f"></a>
+<a id="org6d730b7"></a>
 
 ### Prerequisites
 
@@ -80,8 +69,67 @@ successfully compile the project:
 -   [Go](https://go.dev/doc/install) >= 1.19
 -   Make (should come preinstalled on most UNIX systems)
 
+All previously mentioned packaged are usually available via the
+inbuilt package manager of the OS. The Raspberry Pi Pico SDK on
+the other hand needs some special setup that is described in the
+next section.
 
-<a id="org322e8c2"></a>
+1.  Pico SDK & picotool
+
+    The Raspberry Pi Foundation provides a rather extensive set of
+    libraries that provide ready to use functions for most common
+    features of the platform and abstracts the concrete hardware of
+    the used RP2040 board (e.g. Pico vs. Pico W) so it will work
+    with all of them with minimal changes. This project makes use of
+    the Pico SDK and therefore an initial setup is required.
+    
+    1.  Clone the pico-sdk & picotool repositories into a folder
+        named `pico` into your work directory that sits on the same
+        level as this project's root directory:
+        
+            mkdir pico
+            cd pico
+            git clone git@github.com:raspberrypi/pico-sdk.git
+            git clone git@github.com:raspberrypi/picotool.git
+        
+        This should result in the following hierarchy:
+        
+            <work-dir>
+            - project-ikarus
+            - pico
+              - pico-sdk
+              - picotool
+    
+    2.  Install all required dependencies for pico-sdk &
+        picotool. The following commands only apply to macOS using
+        brew:
+        
+            brew install gcc-arm-embedded libusb
+    
+    3.  Build the pico-sdk project:
+        
+            cd pico-sdk
+            git submodule update --init
+            cmake
+    
+    4.  Build the picotool project:
+        
+            cd pico-tool
+            mkdir build
+            cd build
+            export PICO_SDK_PATH=../../pico-sdk
+            cmake ..
+        
+        Also make sure to add the `picotool` executable to your
+        path.
+    
+    5.  To enable hands off flashing of your Raspberry Pi Pico you
+        need to flash it once manually with any program thas has
+        `stdio_usb` support enabled. After that all subsequent
+        updates can be applied with `make flash-pico`.
+
+
+<a id="org5ec83ab"></a>
 
 ### Compilation
 
@@ -91,7 +139,7 @@ and some additional tools. Running `make` in the project root
 will compile all subprojects and output their binaries to `bin/`.
 
 
-<a id="orgbbac281"></a>
+<a id="org5e4f816"></a>
 
 ### Useful Make Targets
 
@@ -150,6 +198,12 @@ A short reference on the most used make targets:
 
 
 <tr>
+<td class="org-left">make flash-pico</td>
+<td class="org-left">Flashes software changes to the Raspberry Pi Pico</td>
+</tr>
+
+
+<tr>
 <td class="org-left">make clean</td>
 <td class="org-left">Deletes bin/*</td>
 </tr>
@@ -157,14 +211,14 @@ A short reference on the most used make targets:
 </table>
 
 
-<a id="orgaca2fb3"></a>
+<a id="org05ee2ab"></a>
 
 ## Hardware
 
 Some thoughts on different hardware options that could be used.
 
 
-<a id="org6b59361"></a>
+<a id="org0fc953a"></a>
 
 ### uC
 
@@ -186,7 +240,7 @@ Possible microcontrollers to execute the control loop on.
     Adafruit projects. Costing only around 5 € (or 8 € with WIFI).
 
 
-<a id="org56d4250"></a>
+<a id="org69409d8"></a>
 
 ### Accelerometer
 
@@ -207,12 +261,14 @@ Possible accelerometer sensors.
     up resources on the main uC.
 
 
-<a id="org83cf96b"></a>
+<a id="orgc197c54"></a>
 
 ### Barometer
 
+**TBD**
 
-<a id="org6ae746d"></a>
+
+<a id="org2539df7"></a>
 
 ## Software Components
 
@@ -227,7 +283,7 @@ Possible accelerometer sensors.
 -   Serial Data Relay (CLI)
 
 
-<a id="org3a7d042"></a>
+<a id="org9665209"></a>
 
 ### Flight Controller
 
@@ -246,7 +302,7 @@ want to give Forth a try.
     -   [ ] Controls multiple actuators
 
 
-<a id="org702c375"></a>
+<a id="org0175f63"></a>
 
 ### Tower
 
@@ -301,7 +357,7 @@ sub-components for further details.
         -   [ ] Persist messages in the Data Store
 
 
-<a id="org5ea4cc1"></a>
+<a id="orgfb90de2"></a>
 
 ### Random Data Generator
 
@@ -314,7 +370,7 @@ submits random data in a specified range.
     -   [ ] Submit a sine wave in a specifiable range
 
 
-<a id="org7688c2e"></a>
+<a id="orga3e13e6"></a>
 
 ### Serial Data Relay
 
@@ -327,7 +383,7 @@ incoming data to the Message Broker.
     -   [ ] Relay data to the Message Broker on a configurable topic
 
 
-<a id="org7466cd4"></a>
+<a id="org86b334c"></a>
 
 ### Data Store
 
@@ -340,7 +396,7 @@ The persistent storage layer of the project.
     -   [ ] Compress the stored data to save disk space
 
 
-<a id="org4ba559c"></a>
+<a id="org1c4ed2d"></a>
 
 ### CSM - Comma Separated Map
 
@@ -373,59 +429,4 @@ resource efficient serialization/deserialization.
             "gyro": "123",
             "accel": "456"
         }
-
-
-<a id="orgaa70d50"></a>
-
-## DONE Implement Websocket endpoints
-
-
-<a id="orgb0f70ad"></a>
-
-## DONE Implement Websocket client
-
-
-<a id="org55fe788"></a>
-
-## DONE Implement Websocket data generator
-
-
-<a id="orgccefebf"></a>
-
-## DONE Implement continuous graph
-
-
-<a id="org96aa391"></a>
-
-## DONE Choose hardware
-
-
-<a id="org062094b"></a>
-
-## DONE Choose a licence
-
-
-<a id="org62f5f0e"></a>
-
-## DONE Read serial port data and forward to websocket
-
-
-<a id="org8017e5a"></a>
-
-## TODO Return 404 if a template could not be found
-
-
-<a id="org696e236"></a>
-
-## TODO Read gyro data from sensor
-
-
-<a id="org7be564b"></a>
-
-## TODO Write sensor data from IC to serial port
-
-
-<a id="org0a3e1cf"></a>
-
-## TODO Compute 3D fusion algorithm on MPU-6050
 
