@@ -6,6 +6,7 @@
 
 #include "pico/stdlib.h"
 #include "pico/cyw43_arch.h"
+#include "stdio.h"
 
 int main() {
   stdio_init_all();
@@ -18,5 +19,6 @@ int main() {
     sleep_ms(100);
     cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
     sleep_ms(900);
+    printf("Hello from pico!\n");
   }
 }
