@@ -26,6 +26,12 @@ function init() {
         point: {
           radius: 0
         }
+      },
+      scales: {
+        y: {
+          min: -20000,
+          max: 20000
+        }
       }
     }
   };
@@ -39,7 +45,7 @@ function connectToWebSocket(graph) {
     const data = JSON.parse(event.data);
     const graphData = graph.data.datasets[0].data;
 
-    graphData.push({ x: data.timestamp, y: data.generator });
+    graphData.push({ x: data.timestamp, y: data.accelX });
     if (graphData.length > 200) {
       graphData.shift();
     }

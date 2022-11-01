@@ -57,6 +57,7 @@ flight-controller/build/Makefile:
 	cd build; \
 	cmake ..
 
+# TODO: Figure out how to reliably rebuild this.
 bin/flight-controller.uf2: flight-controller/build/Makefile $(wildcard flight-controller/*.c)
 	@cd flight-controller/build; \
 	make; \
