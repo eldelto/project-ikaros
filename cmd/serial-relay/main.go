@@ -42,12 +42,37 @@ func main() {
 			log.Fatalf("Failed to read from serial port: %s", err)
 		}
 		serialValue = strings.Trim(serialValue, "\r\n")
+		data, err := parseCSM(serialValue)
+		if err != nil {
+			log.Fatalf("Failed to parse CSM value: %s", err)
+		}
 
-		parts := strings.Split(serialValue, "=")
-		if err := writeToTower(conn, parts[0], parts[1]); err != nil {
+		if err := writeToTower(conn, data); err != nil {
 			log.Fatalf("Failed to write to tower: %s", err)
 		}
 	}
+}
+
+func parseCSM(csm string) (map[string]any, error) {
+	data := map[string]any{}
+	keyPairs := strings.Split(csm, ";")
+	for _, keyPair := range keyPairs {
+		parts := strings.Split(keyPair, "=")
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("'%s' is not a valid key-pair", keyPair)
+		}
+
+		key := parts[0]
+		value := parts[1]
+		floatValue, err := strconv.ParseFloat(value, 64)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert value '%s' to float64: %w", value, err)
+		}
+
+		data[key] = floatValue
+	}
+
+	return data, nil
 }
 
 func connectToTower() (*websocket.Conn, error) {
@@ -61,14 +86,7 @@ func connectToTower() (*websocket.Conn, error) {
 	return conn, nil
 }
 
-func writeToTower(conn *websocket.Conn, key string, value string) error {
-	data := map[string]any{}
-	floatValue, err := strconv.ParseFloat(value, 64)
-	if err != nil {
-		return fmt.Errorf("failed to convert value '%s' to float64: %w", value, err)
-	}
-
-	data[key] = floatValue
+func writeToTower(conn *websocket.Conn, data map[string]any) error {
 	data["timestamp"] = time.Now()
 	buffer := bytes.Buffer{}
 	if err := json.NewEncoder(&buffer).Encode(data); err != nil {

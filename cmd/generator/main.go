@@ -19,8 +19,9 @@ const (
 )
 
 type dataPoint struct {
-	Generator float64   `json:"generator"`
-	Timestamp time.Time `json:"timestamp"`
+	AccelerationX float64   `json:"accelerationX"`
+	AccelerationY float64   `json:"accelerationY"`
+	Timestamp     time.Time `json:"timestamp"`
 }
 
 func main() {
@@ -38,7 +39,7 @@ func main() {
 			value = minValue
 		}
 
-		dp := dataPoint{math.Sin(value), time.Now()}
+		dp := dataPoint{math.Sin(value), math.Cos(value), time.Now()}
 		buffer := bytes.Buffer{}
 		if err := json.NewEncoder(&buffer).Encode(dp); err != nil {
 			log.Fatalf("Failed to encode data point: %s", err)

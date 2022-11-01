@@ -1,4 +1,7 @@
 import Chart from "chart.js/auto";
+import ColorHash from "color-hash";
+
+const colorHash = new ColorHash();
 
 window.onload = function () {
   const graph = init();
@@ -11,12 +14,7 @@ function init() {
   const config = {
     type: "line",
     data: {
-      datasets: [{
-        label: "accelerometer0",
-        borderColor: "#4287f5",
-        backgroundColor: "#4287f5",
-        data: []
-      }],
+      datasets: [],
     },
     options: {
       animation: false,
@@ -25,12 +23,6 @@ function init() {
       elements: {
         point: {
           radius: 0
-        }
-      },
-      scales: {
-        y: {
-          min: -20000,
-          max: 20000
         }
       }
     }
@@ -41,17 +33,51 @@ function init() {
 
 function connectToWebSocket(graph) {
   const webSocket = new WebSocket(constructWebsocketUrl("/consumers/ws"));
-  webSocket.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    const graphData = graph.data.datasets[0].data;
-
-    graphData.push({ x: data.timestamp, y: data.accelX });
-    if (graphData.length > 200) {
-      graphData.shift();
-    }
-
-    graph.update();
+  webSocket.onmessage = (message) => {
+    const event = JSON.parse(message.data);
+    const sensorMap = parseEventToMap(event);
+    pushSensorData(graph, sensorMap, event.timestamp);
   };
+}
+
+function parseEventToMap(event) {
+  const sensorMap = new Map();
+  Object.keys(event).forEach((key) => {
+    if (key !== "timestamp") {
+      sensorMap.set(key, event[key]);
+    }
+  });
+
+  return sensorMap;
+}
+
+function pushSensorData(graph, sensorMap, timestamp) {
+  Array.from(sensorMap.keys())
+    .sort()
+    .forEach((key, index) => {
+      const value = sensorMap.get(key);
+      if (graph.data.datasets.length < index + 1) {
+        const color = colorHash.hex(key);
+        const newDataset = {
+          label: key,
+          borderColor: color,
+          backgroundColor: color,
+          data: []
+        };
+
+        graph.data.datasets.push(newDataset);
+      }
+
+      const graphData = graph.data.datasets[index].data;
+      const newData = { x: timestamp, y: value };
+      graphData.push(newData);
+      if (graphData.length > 200) {
+        graphData.shift();
+      }
+
+    });
+
+  graph.update();
 }
 
 function constructWebsocketUrl(endpoint) {
