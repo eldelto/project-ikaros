@@ -103,7 +103,7 @@ int main() {
     // Temperature is simple so use the datasheet calculation to get deg C.
     // Note this is chip temperature.
     // printf("Temp. = %f\n", (temp / 340.0) + 36.53);
-    printf("accelX=%d;accelY=%d;accelZ=%d\n", acceleration[0], acceleration[1], acceleration[2]);
+    printf("accelerationX=%d;accelerationY=%d;accelerationZ=%d\n", acceleration[0], acceleration[1], acceleration[2]);
 
     sleep_ms(50);
   }
