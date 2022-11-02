@@ -2,20 +2,24 @@ package main
 
 import (
 	"bufio"
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"log"
-	"net/url"
+	"os"
 	"strconv"
 	"strings"
-	"time"
 
+	"github.com/eldelto/ikaros/internal/optional"
 	"github.com/eldelto/ikaros/internal/serial"
-	"github.com/gorilla/websocket"
+	"github.com/eldelto/ikaros/internal/tower"
 )
 
 func main() {
+	hostArg := optional.Empty[string]()
+	if len(os.Args) > 1 {
+		hostArg = optional.Of(os.Args[1])
+	}
+	towerHost := hostArg.GetOrElse("localhost:8080")
+
 	serialPortName, err := serial.ChoosePort()
 	if err != nil {
 		log.Fatal(err)
@@ -23,11 +27,11 @@ func main() {
 
 	fmt.Printf("\nRelaying %s ...\n", serialPortName)
 
-	conn, err := connectToTower()
-	if err != nil {
+	towerClient := tower.NewClient(towerHost)
+	if err := towerClient.Connect(); err != nil {
 		log.Fatal(err)
 	}
-	defer conn.Close()
+	defer towerClient.Close()
 
 	serialPort, err := serial.Read(serialPortName)
 	if err != nil {
@@ -47,7 +51,7 @@ func main() {
 			log.Fatalf("Failed to parse CSM value: %s", err)
 		}
 
-		if err := writeToTower(conn, data); err != nil {
+		if err := towerClient.Send(data); err != nil {
 			log.Fatalf("Failed to write to tower: %s", err)
 		}
 	}
@@ -73,29 +77,4 @@ func parseCSM(csm string) (map[string]any, error) {
 	}
 
 	return data, nil
-}
-
-func connectToTower() (*websocket.Conn, error) {
-	url := url.URL{Scheme: "ws", Host: "localhost:8080", Path: "/producers/ws"}
-
-	conn, _, err := websocket.DefaultDialer.Dial(url.String(), nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to '%s': %w", url.String(), err)
-	}
-
-	return conn, nil
-}
-
-func writeToTower(conn *websocket.Conn, data map[string]any) error {
-	data["timestamp"] = time.Now()
-	buffer := bytes.Buffer{}
-	if err := json.NewEncoder(&buffer).Encode(data); err != nil {
-		return fmt.Errorf("failed to encode data point: %w", err)
-	}
-
-	if err := conn.WriteMessage(websocket.TextMessage, buffer.Bytes()); err != nil {
-		return fmt.Errorf("failed to write data to connection: %w", err)
-	}
-
-	return nil
 }

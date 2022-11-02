@@ -82,7 +82,7 @@ function pushSensorData(graph, sensorMap, timestamp) {
 
 function constructWebsocketUrl(endpoint) {
   const host = window.location.host;
-  const wsProtocol = window.location.protocol == "https" ? "wss" : "ws";
+  const wsProtocol = window.location.protocol == "https:" ? "wss" : "ws";
 
   return wsProtocol + "://" + host + endpoint;
 }

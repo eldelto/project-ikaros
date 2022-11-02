@@ -1,14 +1,13 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"log"
 	"math"
-	"net/url"
+	"os"
 	"time"
 
-	"github.com/gorilla/websocket"
+	"github.com/eldelto/ikaros/internal/optional"
+	"github.com/eldelto/ikaros/internal/tower"
 )
 
 const (
@@ -18,20 +17,18 @@ const (
 	step     = 0.1
 )
 
-type dataPoint struct {
-	AccelerationX float64   `json:"accelerationX"`
-	AccelerationY float64   `json:"accelerationY"`
-	Timestamp     time.Time `json:"timestamp"`
-}
-
 func main() {
-	url := url.URL{Scheme: "ws", Host: "localhost:8080", Path: "/producers/ws"}
-
-	conn, _, err := websocket.DefaultDialer.Dial(url.String(), nil)
-	if err != nil {
-		log.Fatalf("Failed to connect to '%s': %s", url.String(), err)
+	hostArg := optional.Empty[string]()
+	if len(os.Args) > 1 {
+		hostArg = optional.Of(os.Args[1])
 	}
-	defer conn.Close()
+	towerHost := hostArg.GetOrElse("localhost:8080")
+
+	towerClient := tower.NewClient(towerHost)
+	if err := towerClient.Connect(); err != nil {
+		log.Fatal(err)
+	}
+	defer towerClient.Close()
 
 	value := minValue
 	for {
@@ -39,14 +36,14 @@ func main() {
 			value = minValue
 		}
 
-		dp := dataPoint{math.Sin(value), math.Cos(value), time.Now()}
-		buffer := bytes.Buffer{}
-		if err := json.NewEncoder(&buffer).Encode(dp); err != nil {
-			log.Fatalf("Failed to encode data point: %s", err)
+		data := map[string]any{
+			"sine":      math.Sin(value),
+			"cosine":    math.Cos(value),
+			"timestamp": time.Now(),
 		}
 
-		if err := conn.WriteMessage(websocket.TextMessage, buffer.Bytes()); err != nil {
-			log.Fatalf("Failed to write data to connection: %s", err)
+		if err := towerClient.Send(data); err != nil {
+			log.Fatalf("Failed to write to tower: %s", err)
 		}
 
 		value += 0.1
