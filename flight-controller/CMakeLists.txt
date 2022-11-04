@@ -7,20 +7,20 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
 pico_sdk_init()
-add_executable(blink
-  blink.c
+add_executable(flight-controller
+  flight-controller.c
 )
 
-target_compile_definitions(blink PRIVATE
+target_compile_definitions(flight-controller PRIVATE
   PICO_DEFAULT_I2C=1
   PICO_DEFAULT_I2C_SCL_PIN=15
   PICO_DEFAULT_I2C_SDA_PIN=14
 )
 
-pico_enable_stdio_usb(blink 1)
-pico_add_extra_outputs(blink)
+pico_enable_stdio_usb(flight-controller 1)
+pico_add_extra_outputs(flight-controller)
 
-target_link_libraries(blink 
+target_link_libraries(flight-controller 
   pico_stdlib
   pico_cyw43_arch_none
   hardware_i2c

@@ -1,3 +1,5 @@
+.DELETE_ON_ERROR:
+
 # High-level commands
 .PHONY: build
 build: bin/tower bin/generator bin/serial-relay bin/serial-monitor bin/flight-controller.uf2
@@ -38,7 +40,8 @@ test-loop:
 
 .PHONY: clean
 clean:
-	@rm bin/*
+	@rm -f bin/*
+	@rm -rf flight-controller/build
 
 # Tower
 bin/tower: .FORCE internal/tower/api/assets/index.js
@@ -49,24 +52,23 @@ internal/tower/api/assets/index.js: $(wildcard analyzer-web/*.js)
 		--bundle --minify --outfile=internal/tower/api/assets/index.js
 
 # Flight-Controller
+export PICO_SDK_PATH=../../../pico/pico-sdk
+export PICO_BOARD=pico_w
+
 flight-controller/build/Makefile:
-	@export PICO_SDK_PATH=~/Documents/workspace/pico/pico-sdk
-	@export PICO_BOARD=pico_w
 	@cd flight-controller; \
 	mkdir -p build; \
 	cd build; \
 	cmake ..
 
-# TODO: Figure out how to reliably rebuild this.
 bin/flight-controller.uf2: flight-controller/build/Makefile $(wildcard flight-controller/*.c)
+	@rm -f bin/flight-controller.uf2
 	@cd flight-controller/build; \
-	make; \
-	cp blink.uf2 ../../bin/flight-controller.uf2
+	make
+	@cp flight-controller/build/flight-controller.uf2 bin/flight-controller.uf2
 
 .PHONY: flash-pico
 flash-pico: bin/flight-controller.uf2
-	@export PICO_SDK_PATH=~/Documents/workspace/pico/pico-sdk
-	@export PICO_BOARD=pico_w
 	@picotool load -f bin/flight-controller.uf2
 
 # Utility programs
