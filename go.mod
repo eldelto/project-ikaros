@@ -7,20 +7,20 @@ require (
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/websocket v1.5.0
-	github.com/kyoh86/richgo v0.3.10
 	go.bug.st/serial v1.4.0
+	honnef.co/go/tools v0.3.3
 )
 
 require (
+	github.com/BurntSushi/toml v1.2.0 // indirect
 	github.com/creack/goselect v0.1.2 // indirect
 	github.com/creack/pty v1.1.11 // indirect
 	github.com/fsnotify/fsnotify v1.4.7 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
-	github.com/kyoh86/xdg v1.2.0 // indirect
-	github.com/mattn/go-isatty v0.0.14 // indirect
-	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/ogier/pflag v0.0.1 // indirect
-	github.com/wacul/ptr v1.0.0 // indirect
+	github.com/stretchr/testify v1.8.0 // indirect
+	golang.org/x/exp/typeparams v0.0.0-20220218215828-6cf2b201936e // indirect
+	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
 	golang.org/x/sys v0.0.0-20220928140112-f11e5e49a4ec // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
+	golang.org/x/tools v0.1.12 // indirect
 )
