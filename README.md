@@ -1,32 +1,32 @@
 
 # Table of Contents
 
-1.  [Project Ikaros](#orga8c8b6e)
-    1.  [Goals](#orgbcbc656)
-    2.  [Milestones](#org9cfc62c)
-    3.  [Getting Started](#org5700798)
-        1.  [Prerequisites](#org6d730b7)
-        2.  [Compilation](#org5ec83ab)
-        3.  [Useful Make Targets](#org5e4f816)
-    4.  [Hardware](#org05ee2ab)
-        1.  [uC](#org0fc953a)
-        2.  [Accelerometer](#org69409d8)
-        3.  [Barometer](#orgc197c54)
-    5.  [Software Components](#org2539df7)
-        1.  [Flight Controller](#org9665209)
-        2.  [Tower](#org0175f63)
-        3.  [Random Data Generator](#orgfb90de2)
-        4.  [Serial Data Relay](#orga3e13e6)
-        5.  [Data Store](#org86b334c)
-        6.  [CSM - Comma Separated Map](#org1c4ed2d)
+1.  [Project Ikaros](#org95942c2)
+    1.  [Goals](#org4879789)
+    2.  [Milestones](#org99fdbdc)
+    3.  [Getting Started](#org708160c)
+        1.  [Prerequisites](#org0dc640d)
+        2.  [Compilation](#org4bf9721)
+        3.  [Useful Make Targets](#orga968f14)
+    4.  [Hardware](#org26516b4)
+        1.  [uC](#orgf5222ed)
+        2.  [Accelerometer](#org042198a)
+        3.  [Barometer](#orge1e1036)
+    5.  [Software Components](#org32aa799)
+        1.  [Flight Controller](#orga92523b)
+        2.  [Tower](#org74973d0)
+        3.  [Random Data Generator](#org1bce8af)
+        4.  [Serial Data Relay](#org3e3d280)
+        5.  [Data Store](#orge522247)
+        6.  [CSM - Comma Separated Map](#org132c3b8)
 
 
-<a id="orga8c8b6e"></a>
+<a id="org95942c2"></a>
 
 # Project Ikaros
 
 
-<a id="orgbcbc656"></a>
+<a id="org4879789"></a>
 
 ## Goals
 
@@ -35,7 +35,7 @@ hardware concepts while trying to build some sort of
 self-stabilizing aerial vehicle (e.g. drone, plane, etc.).
 
 
-<a id="org9cfc62c"></a>
+<a id="org99fdbdc"></a>
 
 ## Milestones
 
@@ -51,14 +51,14 @@ self-stabilizing aerial vehicle (e.g. drone, plane, etc.).
 -   **TBD**
 
 
-<a id="org5700798"></a>
+<a id="org708160c"></a>
 
 ## Getting Started
 
 A quick guide to get the project up and running.
 
 
-<a id="org6d730b7"></a>
+<a id="org0dc640d"></a>
 
 ### Prerequisites
 
@@ -104,13 +104,12 @@ next section.
         picotool. The following commands only apply to macOS using
         brew:
         
-            brew install gcc-arm-embedded libusb
+            brew install gcc-arm-embedded libusb cmake
     
     3.  Build the pico-sdk project:
         
             cd pico-sdk
             git submodule update --init
-            cmake
     
     4.  Build the picotool project:
         
@@ -119,6 +118,7 @@ next section.
             cd build
             export PICO_SDK_PATH=../../pico-sdk
             cmake ..
+            make
         
         Also make sure to add the `picotool` executable to your
         path.
@@ -129,7 +129,7 @@ next section.
         updates can be applied with `make flash-pico`.
 
 
-<a id="org5ec83ab"></a>
+<a id="org4bf9721"></a>
 
 ### Compilation
 
@@ -139,7 +139,7 @@ and some additional tools. Running `make` in the project root
 will compile all subprojects and output their binaries to `bin/`.
 
 
-<a id="org5e4f816"></a>
+<a id="orga968f14"></a>
 
 ### Useful Make Targets
 
@@ -211,14 +211,14 @@ A short reference on the most used make targets:
 </table>
 
 
-<a id="org05ee2ab"></a>
+<a id="org26516b4"></a>
 
 ## Hardware
 
 Some thoughts on different hardware options that could be used.
 
 
-<a id="org0fc953a"></a>
+<a id="orgf5222ed"></a>
 
 ### uC
 
@@ -240,7 +240,7 @@ Possible microcontrollers to execute the control loop on.
     Adafruit projects. Costing only around 5 € (or 8 € with WIFI).
 
 
-<a id="org69409d8"></a>
+<a id="org042198a"></a>
 
 ### Accelerometer
 
@@ -261,14 +261,14 @@ Possible accelerometer sensors.
     up resources on the main uC.
 
 
-<a id="orgc197c54"></a>
+<a id="orge1e1036"></a>
 
 ### Barometer
 
 **TBD**
 
 
-<a id="org2539df7"></a>
+<a id="org32aa799"></a>
 
 ## Software Components
 
@@ -283,7 +283,7 @@ Possible accelerometer sensors.
 -   Serial Data Relay (CLI)
 
 
-<a id="org9665209"></a>
+<a id="orga92523b"></a>
 
 ### Flight Controller
 
@@ -302,7 +302,7 @@ want to give Forth a try.
     -   [ ] Controls multiple actuators
 
 
-<a id="org0175f63"></a>
+<a id="org74973d0"></a>
 
 ### Tower
 
@@ -357,7 +357,7 @@ sub-components for further details.
         -   [ ] Persist messages in the Data Store
 
 
-<a id="orgfb90de2"></a>
+<a id="org1bce8af"></a>
 
 ### Random Data Generator
 
@@ -370,7 +370,7 @@ submits random data in a specified range.
     -   [ ] Submit a sine wave in a specifiable range
 
 
-<a id="orga3e13e6"></a>
+<a id="org3e3d280"></a>
 
 ### Serial Data Relay
 
@@ -383,7 +383,7 @@ incoming data to the Message Broker.
     -   [ ] Relay data to the Message Broker on a configurable topic
 
 
-<a id="org86b334c"></a>
+<a id="orge522247"></a>
 
 ### Data Store
 
@@ -396,7 +396,7 @@ The persistent storage layer of the project.
     -   [ ] Compress the stored data to save disk space
 
 
-<a id="org1c4ed2d"></a>
+<a id="org132c3b8"></a>
 
 ### CSM - Comma Separated Map
 
@@ -429,4 +429,3 @@ resource efficient serialization/deserialization.
             "gyro": "123",
             "accel": "456"
         }
-

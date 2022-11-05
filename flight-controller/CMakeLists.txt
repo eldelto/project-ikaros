@@ -8,7 +8,11 @@ set(CMAKE_CXX_STANDARD 17)
 
 pico_sdk_init()
 add_executable(flight-controller
-  flight-controller.c
+  main.c
+)
+
+target_include_directories(flight-controller PRIVATE
+        ${CMAKE_CURRENT_LIST_DIR}
 )
 
 target_compile_definitions(flight-controller PRIVATE
@@ -20,8 +24,11 @@ target_compile_definitions(flight-controller PRIVATE
 pico_enable_stdio_usb(flight-controller 1)
 pico_add_extra_outputs(flight-controller)
 
+add_library(mpu6050 mpu6050.c)
+
 target_link_libraries(flight-controller 
   pico_stdlib
   pico_cyw43_arch_none
   hardware_i2c
+  mpu6050
 )

@@ -9,6 +9,7 @@
 #include "pico/stdlib.h"
 #include "pico/binary_info.h"
 #include "hardware/i2c.h"
+#include "mpu6050.h"
 
  /* Example code to talk to a MPU6050 MEMS accelerometer and gyroscope
     This is taking to simple approach of simply reading registers. It's perfectly
@@ -28,7 +29,6 @@
  // By default these devices  are on bus address 0x68
 static int addr = 0x68;
 
-#ifdef i2c_default
 static void mpu6050_reset() {
   // Two byte reset. First byte register, second byte data
   // There are a load more options to set up the device in different ways that could be added here
@@ -70,14 +70,14 @@ static void mpu6050_read_raw(int16_t accel[3], int16_t gyro[3], int16_t* temp) {
 
   *temp = buffer[0] << 8 | buffer[1];
 }
-#endif
 
 int main() {
   stdio_init_all();
+
 #if !defined(i2c_default) || !defined(PICO_DEFAULT_I2C_SDA_PIN) || !defined(PICO_DEFAULT_I2C_SCL_PIN)
-  #warning i2c / mpu6050_i2c example requires a board with I2C pins
-    puts("Default I2C pins were not defined");
-#else
+#error flight-controller requires a board with I2C pins
+#endif
+
   printf("Hello, MPU6050! Reading raw data from registers...\n");
 
   // This example will use I2C0 on the default SDA and SCL pins (4, 5 on a Pico)
@@ -92,6 +92,9 @@ int main() {
   mpu6050_reset();
 
   int16_t acceleration[3], gyro[3], temp;
+
+  // TODO: Remove
+  mpu_test();
 
   while (1) {
     mpu6050_read_raw(acceleration, gyro, &temp);
@@ -108,6 +111,5 @@ int main() {
     sleep_ms(50);
   }
 
-#endif
   return 0;
 }

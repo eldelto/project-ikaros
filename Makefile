@@ -55,7 +55,7 @@ internal/tower/api/assets/index.js: $(wildcard analyzer-web/*.js)
 export PICO_SDK_PATH=../../../pico/pico-sdk
 export PICO_BOARD=pico_w
 
-flight-controller/build/Makefile:
+flight-controller/build/Makefile: flight-controller/CMakeLists.txt
 	@cd flight-controller; \
 	mkdir -p build; \
 	cd build; \
