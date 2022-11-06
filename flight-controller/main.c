@@ -29,13 +29,6 @@
  // By default these devices  are on bus address 0x68
 static int addr = 0x68;
 
-static void mpu6050_reset() {
-  // Two byte reset. First byte register, second byte data
-  // There are a load more options to set up the device in different ways that could be added here
-  uint8_t buf[] = { 0x6B, 0x00 };
-  i2c_write_blocking(i2c_default, addr, buf, 2, false);
-}
-
 static void mpu6050_read_raw(int16_t accel[3], int16_t gyro[3], int16_t* temp) {
   // For this particular device, we send the device the register we want to read
   // first, then subsequently read from the device. The register is auto incrementing
@@ -89,12 +82,12 @@ int main() {
   // Make the I2C pins available to picotool
   bi_decl(bi_2pins_with_func(PICO_DEFAULT_I2C_SDA_PIN, PICO_DEFAULT_I2C_SCL_PIN, GPIO_FUNC_I2C));
 
-  mpu6050_reset();
+  if (mpu6050_init(i2c_default) != 0) {
+    puts("MPU-6050 init failed");
+    return -1;
+  }
 
   int16_t acceleration[3], gyro[3], temp;
-
-  // TODO: Remove
-  mpu_test();
 
   while (1) {
     mpu6050_read_raw(acceleration, gyro, &temp);
