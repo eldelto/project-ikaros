@@ -87,6 +87,11 @@ int main() {
     return -1;
   }
 
+  if (mpu6050_init_dmp(i2c_default) != 0) {
+    puts("MPU-6050 DMP init failed");
+    return -1;
+  }
+
   int16_t acceleration[3], gyro[3], temp;
 
   while (1) {
