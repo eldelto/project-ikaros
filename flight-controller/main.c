@@ -82,13 +82,18 @@ int main() {
   // Make the I2C pins available to picotool
   bi_decl(bi_2pins_with_func(PICO_DEFAULT_I2C_SDA_PIN, PICO_DEFAULT_I2C_SCL_PIN, GPIO_FUNC_I2C));
 
-  if (mpu6050_init(i2c_default) != 0) {
+  if (mpu6050_init(i2c_default) < 0) {
     puts("MPU-6050 init failed");
     return -1;
   }
 
-  if (mpu6050_init_dmp(i2c_default) != 0) {
+  if (mpu6050_init_dmp(i2c_default) < 0) {
     puts("MPU-6050 DMP init failed");
+    return -1;
+  }
+
+  if (mpu6050_enable_dmp_quaternion(i2c_default) < 0) {
+    puts("MPU-6050 enable DMP quaternion failed");
     return -1;
   }
 

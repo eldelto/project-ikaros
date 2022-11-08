@@ -5,6 +5,11 @@
 #define PWR_MANAGEMENT          (0x6B)
 #define BANK_SEL                (0x6D)
 #define MEM_RW                  (0x6F)
+#define DINA20                  (0x20)
+#define DINA28                  (0x28)
+#define DINA30                  (0x30)
+#define DINA38                  (0x38)
+#define CFG_8                   (2718)
 
 // Data
 #define ZERO                    (0x00)
@@ -17,3 +22,4 @@
 
 int mpu6050_init(i2c_inst_t* i2c);
 int mpu6050_init_dmp(i2c_inst_t* i2c);
+int mpu6050_enable_dmp_quaternion(i2c_inst_t* i2c);

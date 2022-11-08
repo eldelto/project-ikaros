@@ -289,3 +289,14 @@ int mpu6050_init_dmp(i2c_inst_t* i2c) {
 
   return 0;
 }
+
+int mpu6050_enable_dmp_quaternion(i2c_inst_t* i2c) {
+  uint8_t data[4] = { DINA20, DINA28, DINA30, DINA38 };
+
+  int result = mpu6050_write_mem(i2c, CFG_8, 4, data);
+  if (result < 0) {
+    return -1;
+  }
+
+  return 0;
+}
