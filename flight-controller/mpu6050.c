@@ -230,6 +230,29 @@ int mpu6050_init(i2c_inst_t* i2c) {
   return 0;
 }
 
+int mpu6050_reset_fifo(i2c_inst_t* i2c) {
+  uint8_t data[2] = { INT_ENABLE, BIT_DMP_INT_EN };
+  if (i2c_write_blocking(i2c, MPU6050_ADDRESS, data, 2, false) < 0)
+    return -1;
+
+  data[0] = FIFO_ENABLE;
+  data[1] = ZERO;
+  if (i2c_write_blocking(i2c, MPU6050_ADDRESS, data, 2, false) < 0)
+    return -1;
+
+  data[0] = USER_CTRL;
+  data[1] = BIT_FIFO_RST | BIT_DMP_RST;
+  if (i2c_write_blocking(i2c, MPU6050_ADDRESS, data, 2, false) < 0)
+    return -1;
+
+  data[0] = USER_CTRL;
+  data[1] = BIT_DMP_EN | BIT_FIFO_EN;
+  if (i2c_write_blocking(i2c, MPU6050_ADDRESS, data, 2, false) < 0)
+    return -1;
+
+  return 0;
+}
+
 static int min(int a, int b) {
   if (a < b) return a;
   return b;
@@ -294,6 +317,21 @@ int mpu6050_enable_dmp_quaternion(i2c_inst_t* i2c) {
   uint8_t data[4] = { DINA20, DINA28, DINA30, DINA38 };
 
   int result = mpu6050_write_mem(i2c, CFG_8, 4, data);
+  if (result < 0) {
+    return -1;
+  }
+
+  return mpu6050_reset_fifo(i2c);
+}
+
+int mpu6050_read_fifo_packet(i2c_inst_t* i2c, uint8_t* packet_data) {
+  uint8_t data = FIFO_RW;
+  int result = i2c_write_blocking(i2c, MPU6050_ADDRESS, &data, 1, true);
+  if (result < 0) {
+    return -1;
+  }
+
+  result = i2c_read_blocking(i2c, MPU6050_ADDRESS, packet_data, DMP_FIFO_PACKET_LENGTH, false);
   if (result < 0) {
     return -1;
   }

@@ -100,16 +100,17 @@ int main() {
   int16_t acceleration[3], gyro[3], temp;
 
   while (1) {
-    mpu6050_read_raw(acceleration, gyro, &temp);
+    // mpu6050_read_raw(acceleration, gyro, &temp);
+    // printf("accelerationX=%d;accelerationY=%d;accelerationZ=%d\n", acceleration[0], acceleration[1], acceleration[2]);
 
-    // These are the raw numbers from the chip, so will need tweaking to be really useful.
-    // See the datasheet for more information
-    // printf("Acc. X = %d, Y = %d, Z = %d\n", acceleration[0], acceleration[1], acceleration[2]);
-    // printf("Gyro. X = %d, Y = %d, Z = %d\n", gyro[0], gyro[1], gyro[2]);
-    // Temperature is simple so use the datasheet calculation to get deg C.
-    // Note this is chip temperature.
-    // printf("Temp. = %f\n", (temp / 340.0) + 36.53);
-    printf("accelerationX=%d;accelerationY=%d;accelerationZ=%d\n", acceleration[0], acceleration[1], acceleration[2]);
+    uint8_t fifo_data[DMP_FIFO_PACKET_LENGTH] = {};
+    // if (mpu6050_read_fifo_packet(i2c_default, fifo_data) < 0) {
+    //   puts("MPU-6050 read FIFO packet failed");
+    // }
+    for (unsigned int i = 0; i < DMP_FIFO_PACKET_LENGTH; i++) {
+      printf("fifo%d=%d, ", i, fifo_data[i]);
+    }
+    printf("\n");
 
     sleep_ms(50);
   }
