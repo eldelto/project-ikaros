@@ -236,6 +236,35 @@ int mpu6050_configure_dlpf(i2c_inst_t* i2c, uint8_t config) {
   return 0;
 }
 
+static int16_t convert_8_to_16_bit(const uint8_t high, const uint8_t low) {
+  return (high << 8 | low);
+}
+
+
+static int mpu6050_read_raw_value(i2c_inst_t* i2c, uint8_t start_address, int16_t data[3]) {
+  if (i2c_write_blocking(i2c, MPU6050_ADDRESS, &start_address, 1, true) < 1)
+    return -1;
+
+  uint8_t buffer[6];
+  if (i2c_read_blocking(i2c, MPU6050_ADDRESS, buffer, 6, false) < 6)
+    return -1;
+
+  for (int i = 0; i < 3; i++) {
+    data[i] = convert_8_to_16_bit(buffer[i*2], buffer[(i*2) + 1]);
+  }
+
+  return 0;
+}
+
+int mpu6050_read_raw_gyro(i2c_inst_t* i2c, int16_t data[3]) {
+  return mpu6050_read_raw_value(i2c, GYRO_OUT, data);
+}
+
+int mpu6050_read_raw_acceleration(i2c_inst_t* i2c, int16_t data[3]) {
+  return mpu6050_read_raw_value(i2c, ACCEL_OUT, data);
+}
+
+// TODO: Verify that the following functions actually work.
 int mpu6050_reset_fifo(i2c_inst_t* i2c) {
   uint8_t data[2] = { INT_ENABLE, BIT_DMP_INT_EN };
   if (i2c_write_blocking(i2c, MPU6050_ADDRESS, data, 2, false) < 0)

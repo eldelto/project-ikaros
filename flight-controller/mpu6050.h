@@ -10,6 +10,8 @@
 #define USER_CTRL               (0x6A)
 #define FIFO_ENABLE             (0x23)
 #define CONFIG                  (0x1A)
+#define ACCEL_OUT               (0x3B)
+#define GYRO_OUT                (0x43)
 
 #define DINA20                  (0x20)
 #define DINA28                  (0x28)
@@ -40,6 +42,9 @@
 
 int mpu6050_init(i2c_inst_t* i2c);
 int mpu6050_configure_dlpf(i2c_inst_t* i2c, uint8_t config);
+int mpu6050_read_raw_gyro(i2c_inst_t* i2c, int16_t data[3]);
+int mpu6050_read_raw_acceleration(i2c_inst_t* i2c, int16_t data[3]);
+
 int mpu6050_reset_fifo(i2c_inst_t* i2c);
 int mpu6050_init_dmp(i2c_inst_t* i2c);
 int mpu6050_enable_dmp_quaternion(i2c_inst_t* i2c);
