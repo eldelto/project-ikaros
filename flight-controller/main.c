@@ -29,13 +29,6 @@
  // By default these devices  are on bus address 0x68
 static int addr = 0x68;
 
-static void mpu6050_reset() {
-  // Two byte reset. First byte register, second byte data
-  // There are a load more options to set up the device in different ways that could be added here
-  uint8_t buf[] = { 0x6B, 0x00 };
-  i2c_write_blocking(i2c_default, addr, buf, 2, false);
-}
-
 static void mpu6050_read_raw(int16_t accel[3], int16_t gyro[3], int16_t* temp) {
   // For this particular device, we send the device the register we want to read
   // first, then subsequently read from the device. The register is auto incrementing
@@ -71,6 +64,17 @@ static void mpu6050_read_raw(int16_t accel[3], int16_t gyro[3], int16_t* temp) {
   *temp = buffer[0] << 8 | buffer[1];
 }
 
+
+static void handle_error(const int error_value, const char const * error_message) {
+  if (error_value >= 0)
+    return;
+
+  while (true) {
+    puts(error_message);
+    sleep_ms(1000);
+  }
+}
+
 int main() {
   stdio_init_all();
 
@@ -86,27 +90,27 @@ int main() {
   gpio_set_function(PICO_DEFAULT_I2C_SCL_PIN, GPIO_FUNC_I2C);
   gpio_pull_up(PICO_DEFAULT_I2C_SDA_PIN);
   gpio_pull_up(PICO_DEFAULT_I2C_SCL_PIN);
+  
   // Make the I2C pins available to picotool
   bi_decl(bi_2pins_with_func(PICO_DEFAULT_I2C_SDA_PIN, PICO_DEFAULT_I2C_SCL_PIN, GPIO_FUNC_I2C));
 
-  mpu6050_reset();
+  handle_error(mpu6050_init(i2c_default), "MPU-6050 init failed");
+  handle_error(mpu6050_configure_dlpf(i2c_default, DLPF_44HZ), "MPU-6050 DLPF config failed");
 
   int16_t acceleration[3], gyro[3], temp;
 
-  // TODO: Remove
-  mpu_test();
-
-  while (1) {
+  while (true) {
     mpu6050_read_raw(acceleration, gyro, &temp);
-
-    // These are the raw numbers from the chip, so will need tweaking to be really useful.
-    // See the datasheet for more information
-    // printf("Acc. X = %d, Y = %d, Z = %d\n", acceleration[0], acceleration[1], acceleration[2]);
-    // printf("Gyro. X = %d, Y = %d, Z = %d\n", gyro[0], gyro[1], gyro[2]);
-    // Temperature is simple so use the datasheet calculation to get deg C.
-    // Note this is chip temperature.
-    // printf("Temp. = %f\n", (temp / 340.0) + 36.53);
     printf("accelerationX=%d;accelerationY=%d;accelerationZ=%d\n", acceleration[0], acceleration[1], acceleration[2]);
+
+    // uint8_t fifo_data[DMP_FIFO_PACKET_LENGTH] = {};
+    // // if (mpu6050_read_fifo_packet(i2c_default, fifo_data) < 0) {
+    // //   puts("MPU-6050 read FIFO packet failed");
+    // // }
+    // for (unsigned int i = 0; i < DMP_FIFO_PACKET_LENGTH; i++) {
+    //   printf("fifo%d=%d, ", i, fifo_data[i]);
+    // }
+    // printf("\n");
 
     sleep_ms(50);
   }

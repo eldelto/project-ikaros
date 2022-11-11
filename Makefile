@@ -61,7 +61,7 @@ flight-controller/build/Makefile: flight-controller/CMakeLists.txt
 	cd build; \
 	cmake ..
 
-bin/flight-controller.uf2: flight-controller/build/Makefile $(wildcard flight-controller/*.c)
+bin/flight-controller.uf2: flight-controller/build/Makefile $(wildcard flight-controller/*.h) $(wildcard flight-controller/*.c)
 	@rm -f bin/flight-controller.uf2
 	@cd flight-controller/build; \
 	make
