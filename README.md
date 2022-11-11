@@ -104,7 +104,7 @@ next section.
         picotool. The following commands only apply to macOS using
         brew:
         
-            brew install gcc-arm-embedded libusb cmake
+            brew install gcc-arm-embedded libusb cmake pkg-config
     
     3.  Build the pico-sdk project:
         
@@ -113,7 +113,7 @@ next section.
     
     4.  Build the picotool project:
         
-            cd pico-tool
+            cd picotool
             mkdir build
             cd build
             export PICO_SDK_PATH=../../pico-sdk

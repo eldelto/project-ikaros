@@ -1,30 +1,9 @@
-/**
- * Copyright (c) 2020 Raspberry Pi (Trading) Ltd.
- *
- * SPDX-License-Identifier: BSD-3-Clause
- */
-
 #include <stdio.h>
 #include <string.h>
 #include "pico/stdlib.h"
 #include "pico/binary_info.h"
 #include "hardware/i2c.h"
 #include "mpu6050.h"
-
- /* Example code to talk to a MPU6050 MEMS accelerometer and gyroscope
-    This is taking to simple approach of simply reading registers. It's perfectly
-    possible to link up an interrupt line and set things up to read from the
-    inbuilt FIFO to make it more useful.
-    NOTE: Ensure the device is capable of being driven at 3.3v NOT 5v. The Pico
-    GPIO (and therefor I2C) cannot be used at 5v.
-    You will need to use a level shifter on the I2C lines if you want to run the
-    board at 5v.
-    Connections on Raspberry Pi Pico board, other boards may vary.
-    GPIO PICO_DEFAULT_I2C_SDA_PIN (On Pico this is GP4 (pin 6)) -> SDA on MPU6050 board
-    GPIO PICO_DEFAULT_I2C_SCL_PIN (On Pico this is GP5 (pin 7)) -> SCL on MPU6050 board
-    3.3v (pin 36) -> VCC on MPU6050 board
-    GND (pin 38)  -> GND on MPU6050 board
- */
 
 static void handle_error(const int error_value, const char const * error_message) {
   if (error_value >= 0)
@@ -39,13 +18,12 @@ static void handle_error(const int error_value, const char const * error_message
 int main() {
   stdio_init_all();
 
-#if !defined(i2c_default) || !defined(PICO_DEFAULT_I2C_SDA_PIN) || !defined(PICO_DEFAULT_I2C_SCL_PIN)
-#error flight-controller requires a board with I2C pins
+#if !defined(i2c_default) 
+    || !defined(PICO_DEFAULT_I2C_SDA_PIN) 
+    || !defined(PICO_DEFAULT_I2C_SCL_PIN)
+  #error flight-controller requires a board with I2C pins
 #endif
 
-  printf("Hello, MPU6050! Reading raw data from registers...\n");
-
-  // This example will use I2C0 on the default SDA and SCL pins (4, 5 on a Pico)
   i2c_init(i2c_default, 400 * 1000);
   gpio_set_function(PICO_DEFAULT_I2C_SDA_PIN, GPIO_FUNC_I2C);
   gpio_set_function(PICO_DEFAULT_I2C_SCL_PIN, GPIO_FUNC_I2C);
