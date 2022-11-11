@@ -222,11 +222,17 @@ int mpu6050_init(i2c_inst_t* i2c) {
 
   // Wake up
   uint8_t data[2] = { PWR_MANAGEMENT, ZERO };
-  int result = i2c_write_blocking(i2c, MPU6050_ADDRESS, data, 2, false);
-  if (result < 0) {
+  if (i2c_write_blocking(i2c, MPU6050_ADDRESS, data, 2, false) < 2)
     return -1;
-  }
 
+  return 0;
+}
+
+int mpu6050_configure_dlpf(i2c_inst_t* i2c, uint8_t config) {
+  uint8_t data[2] = { CONFIG, config };
+  if (i2c_write_blocking(i2c, MPU6050_ADDRESS, data, 2, false) < 2)
+    return -1;
+  
   return 0;
 }
 
