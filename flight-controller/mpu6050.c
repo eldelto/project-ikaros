@@ -275,7 +275,7 @@ int mpu6050_read_raw_gyro(i2c_inst_t* i2c, int16_t data[3]) {
   return mpu6050_read_raw_value(i2c, GYRO_OUT, data);
 }
 
-int mpu6050_read_raw_acceleration(i2c_inst_t* i2c, int16_t data[3]) {
+int mpu6050_read_raw_accel(i2c_inst_t* i2c, int16_t data[3]) {
   return mpu6050_read_raw_value(i2c, ACCEL_OUT, data);
 }
 
