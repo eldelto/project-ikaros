@@ -16,40 +16,91 @@ static void handle_error(const int error_value, const char const* error_message)
   }
 }
 
-static double clamp_angle(const double angle) {
-  if (angle > 180) return angle - 360;
-  if (angle < -180) return angle + 360;
+typedef struct {
+  double x;
+  double y;
+  double z;
+} vector;
 
-  return angle;
+typedef struct {
+  double w;
+  double x;
+  double y;
+  double z;
+} quaternion;
+
+typedef struct {
+  double roll;
+  double pitch;
+  double yaw;
+} euler;
+
+#define RAD_TO_DEG_FACTOR   (57.295)    // 180 / 3.1459
+#define DEG_TO_RAD_FACTOR   (0.017477)  // 3.1459 / 180
+#define IDENTITY_QUATERNION ((quaternion){.w = 1.0, .x = 0.0, .y = 0.0, .z = 0.0})
+
+static vector vector_multipliy_scalar(const vector v, const double scalar) {
+  return (vector) {
+    .x = v.x * scalar,
+      .y = v.y * scalar,
+      .z = v.z * scalar
+  };
+}
+
+static quaternion quaternion_multiply_vector(const quaternion q, const vector v) {
+  return (quaternion) {
+    .w = -q.x * v.x - q.y * v.y - q.z * v.z,
+      .x = q.w * v.x + q.y * v.z - q.z * v.y,
+      .y = q.w * v.y - q.x * v.z + q.z * v.x,
+      .z = q.w * v.z + q.x * v.y - q.y * v.x
+  };
+}
+
+static quaternion quaternion_add(const quaternion a, const quaternion b) {
+  return (quaternion) {
+    .w = a.w + b.w,
+      .x = a.x + b.x,
+      .y = a.y + b.y,
+      .z = a.z + b.z
+  };
+}
+
+static quaternion quaternion_normalize(const quaternion q) {
+  const double length = 1.0 / sqrt(q.w * q.w + q.x * q.x + q.y * q.y + q.z * q.z);
+
+  return (quaternion) {
+    .w = q.w * length,
+      .x = q.x * length,
+      .y = q.y * length,
+      .z = q.z * length
+  };
+}
+
+static double custom_asin(const double value) {
+  if (value <= -1.0f) return (float)M_PI / -2.0f;
+  if (value >= 1.0f) return (float)M_PI / 2.0f;
+  return asinf(value);
+}
+
+static euler quaternion_to_euler(const quaternion q) {
+  const double half_y_squared = 0.5 - q.y * q.y;
+  return (euler) {
+    .roll = RAD_TO_DEG_FACTOR * (atan2(q.w * q.x + q.y * q.z, half_y_squared - q.x * q.x)),
+      .pitch = RAD_TO_DEG_FACTOR * (custom_asin(2.0 * (q.w * q.y - q.z * q.x))),
+      .yaw = RAD_TO_DEG_FACTOR * (atan2(q.w * q.z + q.x * q.y, half_y_squared - q.z * q.z))
+  };
 }
 
 #define GYRO_MEASUREMENT_COUNT (131) // 32750 / 250
-static void gyro_to_angle(const int16_t gyro[3], double angle[3], const unsigned int delta_time_ms) {
-  const float delta_time_s = (float)delta_time_ms / 1000;
+static vector gyro_to_vector(const int16_t gyro[3], const unsigned int delta_time_ms) {
+  const vector v = {
+      .x = ((double)gyro[1] / GYRO_MEASUREMENT_COUNT) * DEG_TO_RAD_FACTOR,
+      .y = ((double)-gyro[0] / GYRO_MEASUREMENT_COUNT) * DEG_TO_RAD_FACTOR,
+      .z = ((double)gyro[2] / GYRO_MEASUREMENT_COUNT) * DEG_TO_RAD_FACTOR
+  };
 
-  // gyro x = -pitch , gyro y = roll, gyro z = yaw
-  angle[0] = clamp_angle(((float)gyro[1] / GYRO_MEASUREMENT_COUNT) * delta_time_s);
-  angle[1] = clamp_angle(((float)-gyro[0] / GYRO_MEASUREMENT_COUNT) * delta_time_s);
-  angle[2] = clamp_angle(((float)gyro[2] / GYRO_MEASUREMENT_COUNT) * delta_time_s);
-}
-
-#define RAD_TO_DEG_FACTOR (57.295) // 180 / 3.1459
-static void accel_to_angle(const int16_t accel[3], double angle[2]) {
-  const float vx = accel[0];
-  const float vy = accel[1];
-  const float vz = accel[2];
-
-  angle[0] = atan2(vz, vx) * RAD_TO_DEG_FACTOR;
-  angle[1] = atan2(vz, vy) * RAD_TO_DEG_FACTOR;
-}
-
-static void fuse_accel_gyro(const double accel[2], const double gyro_delta[3], double combined[3]) {
-  for (unsigned int i = 0; i < 2; ++i) {
-    const float accel_delta = accel[i] - combined[i];
-    combined[i] += clamp_angle(accel_delta * 0.2 + gyro_delta[i] * 0.8);
-  }
-  
-  combined[2] += gyro_delta[2];
+  const double delta_time_s = (double)delta_time_ms / 1000;
+  return vector_multipliy_scalar(v, delta_time_s);
 }
 
 int main() {
@@ -61,7 +112,7 @@ int main() {
 #error flight-controller requires a board with I2C pins
 #endif
 
-  i2c_init(i2c_default, 400 * 1000);
+    i2c_init(i2c_default, 400 * 1000);
   gpio_set_function(PICO_DEFAULT_I2C_SDA_PIN, GPIO_FUNC_I2C);
   gpio_set_function(PICO_DEFAULT_I2C_SCL_PIN, GPIO_FUNC_I2C);
   gpio_pull_up(PICO_DEFAULT_I2C_SDA_PIN);
@@ -79,14 +130,7 @@ int main() {
   handle_error(mpu6050_configure_dlpf(i2c_default, DLPF_44HZ), "MPU-6050 DLPF config failed");
 
   int16_t acceleration[3], gyro[3];
-  double accel_deg[2], gyro_delta_deg[3] = { 90, 90, 0 }, combined_deg[3] = { 0, 0, 0 };
-
-  // Initial values
-  if (mpu6050_read_raw_accel(i2c_default, acceleration) < 0)
-    puts("Failed to read raw acceleration data");
-
-  accel_to_angle(acceleration, accel_deg);
-  for (unsigned int i = 0; i < 2; ++i) combined_deg[i] = accel_deg[i];
+  quaternion quat = IDENTITY_QUATERNION;
 
   while (true) {
     if (mpu6050_read_raw_accel(i2c_default, acceleration) < 0)
@@ -98,14 +142,18 @@ int main() {
     // printf("accelerationX=%d;accelerationY=%d;accelerationZ=%d;gyroX=%d;gyroY=%d;gyroZ=%d\n",
     //   acceleration[0], acceleration[1], acceleration[2], gyro[0], gyro[1], gyro[2]);
 
-    accel_to_angle(acceleration, accel_deg);
-    gyro_to_angle(gyro, gyro_delta_deg, 50);
-    fuse_accel_gyro(accel_deg, gyro_delta_deg, combined_deg);
+    const vector gyro_vec = gyro_to_vector(gyro, 50);
+    const vector half_gyro_vec = vector_multipliy_scalar(gyro_vec, 0.5);
+    // printf("x=%f;y=%f;y=%f\n", gyro_vec.x, gyro_vec.y, gyro_vec.z);
 
-    // printf("accelDegX=%f;accelDegY=%f;accelDegZ=%f,gyroDegX=%f;gyroDegY=%f;gyroDegZ=%f\n",
-    //   accel_deg[0], accel_deg[1], accel_deg[2], gyro_delta_deg[0], gyro_delta_deg[1], gyro_delta_deg[2]);
+    quat = quaternion_normalize(
+      quaternion_add(
+        quat,
+        quaternion_multiply_vector(quat, half_gyro_vec)));
+    // printf("w=%f;x=%f;y=%f;y=%f\n", quat.w, quat.x, quat.y, quat.z);
 
-    printf("roll=%f;pitch=%f;yaw=%f\n", combined_deg[0], combined_deg[1], combined_deg[2]);
+    euler angles = quaternion_to_euler(quat);
+    printf("roll=%f;pitch=%f;yaw=%f\n", angles.roll, angles.pitch, angles.yaw);
 
     // uint8_t fifo_data[DMP_FIFO_PACKET_LENGTH] = {};
     // // if (mpu6050_read_fifo_packet(i2c_default, fifo_data) < 0) {
