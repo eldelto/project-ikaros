@@ -210,23 +210,7 @@ static const uint8_t dmp_firmware[DMP_CODE_SIZE] = {
   0xa6, 0xd9, 0x00, 0xd8, 0xf1, 0xff
 };
 
-int mpu6050_init(i2c_inst_t* i2c) {
-  // The reset apparently removes the complete default config and
-  // renders the sensor useless unless completely reconfigured.
-  // Reset
-  // uint8_t data[2] = { PWR_MANAGEMENT, BIT_RESET };
-  // int result = i2c_write_blocking(i2c, MPU6050_ADDRESS, data, 2, false);
-  // if (result < 0) {
-  //   return -1;
-  // }
-
-  // Wake up
-  uint8_t data[2] = { PWR_MANAGEMENT, ZERO };
-  if (i2c_write_blocking(i2c, MPU6050_ADDRESS, data, 2, false) < 2)
-    return -1;
-
-  return 0;
-}
+int16_t gyro_drift[3] = {0, 0, 0};
 
 int mpu6050_configure_gyro(i2c_inst_t* i2c, uint8_t config) {
   const uint8_t data[2] = { GYRO_CONFIG, config };
@@ -264,7 +248,7 @@ static int mpu6050_read_raw_value(i2c_inst_t* i2c, uint8_t start_address, int16_
   if (i2c_read_blocking(i2c, MPU6050_ADDRESS, buffer, 6, false) < 6)
     return -1;
 
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < 3; ++i) {
     data[i] = convert_8_to_16_bit(buffer[i * 2], buffer[(i * 2) + 1]);
   }
 
@@ -272,11 +256,49 @@ static int mpu6050_read_raw_value(i2c_inst_t* i2c, uint8_t start_address, int16_
 }
 
 int mpu6050_read_raw_gyro(i2c_inst_t* i2c, int16_t data[3]) {
-  return mpu6050_read_raw_value(i2c, GYRO_OUT, data);
+  if (mpu6050_read_raw_value(i2c, GYRO_OUT, data) < 0)
+    return -1;
+
+  for (unsigned int i = 0; i < 3; ++i)
+    data[i] -= gyro_drift[i];
+
+  return 0;
 }
 
 int mpu6050_read_raw_accel(i2c_inst_t* i2c, int16_t data[3]) {
   return mpu6050_read_raw_value(i2c, ACCEL_OUT, data);
+}
+
+int mpu6050_init(i2c_inst_t* i2c) {
+  // The reset apparently removes the complete default config and
+  // renders the sensor useless unless completely reconfigured.
+  // Reset
+  // uint8_t data[2] = { PWR_MANAGEMENT, BIT_RESET };
+  // int result = i2c_write_blocking(i2c, MPU6050_ADDRESS, data, 2, false);
+  // if (result < 0) {
+  //   return -1;
+  // }
+
+  // Wake up
+  uint8_t data[2] = { PWR_MANAGEMENT, ZERO };
+  if (i2c_write_blocking(i2c, MPU6050_ADDRESS, data, 2, false) < 2)
+    return -1;
+
+  int16_t gyro[3], gyro_sum[3] = {0, 0, 0};
+  const int iterations = 20;
+
+  for (unsigned int i = 0; i < iterations; ++i) {
+    if (mpu6050_read_raw_gyro(i2c, gyro) < 0)
+      return -1;
+
+    for(unsigned int j = 0; j < 3; ++j)
+      gyro_sum[j] += gyro[j];
+  }
+
+  for (unsigned int i = 0; i < 3; ++i)
+    gyro_drift[i] = gyro_sum[i] / iterations;
+
+  return 0;
 }
 
 // TODO: Verify that the following functions actually work.

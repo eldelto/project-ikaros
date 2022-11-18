@@ -16,36 +16,40 @@ static void handle_error(const int error_value, const char const* error_message)
   }
 }
 
-// TODO: This won't be accurate because the sample rate is currently undefined.
+static double clamp_angle(const double angle) {
+  if (angle > 180) return angle - 360;
+  if (angle < -180) return angle + 360;
+
+  return angle;
+}
+
 #define GYRO_MEASUREMENT_COUNT (131) // 32750 / 250
-static void gyro_to_degree(const int16_t gyro[3], float degree[3], const unsigned int delta_time_ms) {
+static void gyro_to_angle(const int16_t gyro[3], double angle[3], const unsigned int delta_time_ms) {
   const float delta_time_s = (float)delta_time_ms / 1000;
 
   // gyro x = -pitch , gyro y = roll, gyro z = yaw
-  degree[0] = ((float)gyro[1] / GYRO_MEASUREMENT_COUNT) * delta_time_s;
-  degree[1] = ((float)-gyro[0] / GYRO_MEASUREMENT_COUNT) * delta_time_s;
-  degree[2] = ((float)gyro[2] / GYRO_MEASUREMENT_COUNT) * delta_time_s;
+  angle[0] = clamp_angle(((float)gyro[1] / GYRO_MEASUREMENT_COUNT) * delta_time_s);
+  angle[1] = clamp_angle(((float)-gyro[0] / GYRO_MEASUREMENT_COUNT) * delta_time_s);
+  angle[2] = clamp_angle(((float)gyro[2] / GYRO_MEASUREMENT_COUNT) * delta_time_s);
 }
 
 #define RAD_TO_DEG_FACTOR (57.295) // 180 / 3.1459
-static void accel_to_degree(const int16_t accel[3], float degree[3]) {
-  const float acc_x = accel[0];
-  const float acc_y = accel[1];
-  const float acc_z = accel[2];
+static void accel_to_angle(const int16_t accel[3], double angle[2]) {
+  const float vx = accel[0];
+  const float vy = accel[1];
+  const float vz = accel[2];
 
-  const float force_vector_len = sqrt(acc_x * acc_x + acc_y * acc_y + acc_z * acc_z);
-
-  // accel x = roll, accel y = pitch, accel z = yaw
-  degree[0] = acos(acc_x / force_vector_len) * RAD_TO_DEG_FACTOR - 90;
-  degree[1] = acos(acc_y / force_vector_len) * RAD_TO_DEG_FACTOR - 90;
-  degree[2] = 0; //acos(acc_z / force_vector_len) * RAD_TO_DEG_FACTOR;
+  angle[0] = atan2(vz, vx) * RAD_TO_DEG_FACTOR;
+  angle[1] = atan2(vz, vy) * RAD_TO_DEG_FACTOR;
 }
 
-static void combine_accel_gyro(const float accel[3], const float gyro_delta[3], float combined[3]) {
-  for (unsigned int i = 0; i < 3; ++i) {
+static void fuse_accel_gyro(const double accel[2], const double gyro_delta[3], double combined[3]) {
+  for (unsigned int i = 0; i < 2; ++i) {
     const float accel_delta = accel[i] - combined[i];
-    combined[i] += accel_delta * 0.2 + gyro_delta[i] * 0.8;
+    combined[i] += clamp_angle(accel_delta * 0.2 + gyro_delta[i] * 0.8);
   }
+  
+  combined[2] += gyro_delta[2];
 }
 
 int main() {
@@ -57,7 +61,7 @@ int main() {
 #error flight-controller requires a board with I2C pins
 #endif
 
-    i2c_init(i2c_default, 400 * 1000);
+  i2c_init(i2c_default, 400 * 1000);
   gpio_set_function(PICO_DEFAULT_I2C_SDA_PIN, GPIO_FUNC_I2C);
   gpio_set_function(PICO_DEFAULT_I2C_SCL_PIN, GPIO_FUNC_I2C);
   gpio_pull_up(PICO_DEFAULT_I2C_SDA_PIN);
@@ -75,13 +79,14 @@ int main() {
   handle_error(mpu6050_configure_dlpf(i2c_default, DLPF_44HZ), "MPU-6050 DLPF config failed");
 
   int16_t acceleration[3], gyro[3];
-  float accel_deg[3], gyro_delta_deg[3] = { 0, 0, 0 }, combined_deg[3] = { 0, 0, 0 };
+  double accel_deg[2], gyro_delta_deg[3] = { 90, 90, 0 }, combined_deg[3] = { 0, 0, 0 };
 
   // Initial values
   if (mpu6050_read_raw_accel(i2c_default, acceleration) < 0)
     puts("Failed to read raw acceleration data");
-  accel_to_degree(acceleration, accel_deg);
-  for (unsigned int i = 0; i < 3; ++i) combined_deg[i] = accel_deg[i];
+
+  accel_to_angle(acceleration, accel_deg);
+  for (unsigned int i = 0; i < 2; ++i) combined_deg[i] = accel_deg[i];
 
   while (true) {
     if (mpu6050_read_raw_accel(i2c_default, acceleration) < 0)
@@ -93,9 +98,9 @@ int main() {
     // printf("accelerationX=%d;accelerationY=%d;accelerationZ=%d;gyroX=%d;gyroY=%d;gyroZ=%d\n",
     //   acceleration[0], acceleration[1], acceleration[2], gyro[0], gyro[1], gyro[2]);
 
-    accel_to_degree(acceleration, accel_deg);
-    gyro_to_degree(gyro, gyro_delta_deg, 50);
-    combine_accel_gyro(accel_deg, gyro_delta_deg, combined_deg);
+    accel_to_angle(acceleration, accel_deg);
+    gyro_to_angle(gyro, gyro_delta_deg, 50);
+    fuse_accel_gyro(accel_deg, gyro_delta_deg, combined_deg);
 
     // printf("accelDegX=%f;accelDegY=%f;accelDegZ=%f,gyroDegX=%f;gyroDegY=%f;gyroDegZ=%f\n",
     //   accel_deg[0], accel_deg[1], accel_deg[2], gyro_delta_deg[0], gyro_delta_deg[1], gyro_delta_deg[2]);
