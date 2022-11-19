@@ -1,14 +1,18 @@
 import Chart from "chart.js/auto";
 import ColorHash from "color-hash";
+import * as THREE from "three";
+import { Quaternion } from "three";
 
 const colorHash = new ColorHash();
+let quaternion = new Quaternion(0, 0, 0, 1);
 
 window.onload = function () {
-  const graph = init();
+  const graph = initGraph();
+  init3d();
   connectToWebSocket(graph);
 };
 
-function init() {
+function initGraph() {
   const ctx = document.getElementById("graph").getContext("2d");
 
   const config = {
@@ -37,6 +41,11 @@ function connectToWebSocket(graph) {
     const event = JSON.parse(message.data);
     const sensorMap = parseEventToMap(event);
     pushSensorData(graph, sensorMap, event.timestamp);
+
+    quaternion.x = -sensorMap.get("y");
+    quaternion.y = -sensorMap.get("z");
+    quaternion.z = sensorMap.get("x");
+    quaternion.w = sensorMap.get("w");
   };
 }
 
@@ -86,3 +95,56 @@ function constructWebsocketUrl(endpoint) {
 
   return wsProtocol + "://" + host + endpoint;
 }
+
+function init3d() {
+  const canvas = document.getElementById("3d");
+
+  //create a scene
+  const scene = new THREE.Scene();
+
+  //create a cube
+  const cube = new THREE.Mesh(
+    //box geometry with a width, height and depth
+    new THREE.BoxGeometry(1, 0.5, 2),
+
+    //apply a mesh basic material to our mesh
+    new THREE.MeshLambertMaterial({
+      color: 0x00ffff
+    })
+  );
+  //add our mesh to the scene
+  scene.add(cube);
+
+  const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+  scene.add(camera);
+  camera.position.x = -2;
+  camera.position.y = 2;
+  camera.position.z = 3;
+  camera.rotateX(-0.5);
+  camera.rotateY(-0.5);
+  camera.rotateZ(-0.3);
+
+  const ambientLight = new THREE.HemisphereLight(0xcccccc, 0.4);
+  scene.add(ambientLight);
+
+  const pointLight = new THREE.PointLight(0xffffff, 0.8);
+  camera.add(pointLight);
+
+  //create renderer
+  const renderer = new THREE.WebGLRenderer({ canvas });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.render(scene, camera);
+
+  const updater = () => {
+    //call the same function again
+    window.requestAnimationFrame(updater);
+
+    cube.setRotationFromQuaternion(quaternion);
+
+    //render the scene again with every function call
+    renderer.render(scene, camera)
+  };
+
+  updater();
+}
+

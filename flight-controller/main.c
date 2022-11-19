@@ -197,10 +197,10 @@ int main() {
       quaternion_add(
         quat,
         quaternion_multiply_vector(quat, feedback))); //feedback
-    // printf("w=%f;x=%f;y=%f;y=%f\n", quat.w, quat.x, quat.y, quat.z);
+    printf("w=%f;x=%f;y=%f;z=%f\n", quat.w, quat.x, quat.y, quat.z);
 
     euler angles = quaternion_to_euler(quat);
-    printf("roll=%f;pitch=%f;yaw=%f\n", angles.roll, angles.pitch, angles.yaw);
+    // printf("roll=%f;pitch=%f;yaw=%f\n", angles.roll, angles.pitch, angles.yaw);
 
     sleep_ms(50);
   }
