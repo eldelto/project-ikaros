@@ -39,11 +39,32 @@ typedef struct {
 #define DEG_TO_RAD_FACTOR   (0.017477)  // 3.1459 / 180
 #define IDENTITY_QUATERNION ((quaternion){.w = 1.0, .x = 0.0, .y = 0.0, .z = 0.0})
 
-static vector vector_multipliy_scalar(const vector v, const double scalar) {
+static vector vector_add(const vector a, const vector b) {
+  return (vector) {
+    .x = a.x + b.x,
+      .y = a.y + b.y,
+      .z = a.z + b.z
+  };
+}
+
+static vector vector_multiply_scalar(const vector v, const double scalar) {
   return (vector) {
     .x = v.x * scalar,
       .y = v.y * scalar,
       .z = v.z * scalar
+  };
+}
+
+static vector vector_normalize(const vector v) {
+  const double length = 1.0 / sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+  return vector_multiply_scalar(v, length);
+}
+
+static vector vector_cross_product(const vector a, const vector b) {
+  return (vector) {
+    .x = a.y * b.z - a.z * b.y,
+      .y = a.z * b.x - a.x * b.z,
+      .z = a.x * b.y - a.y * b.x
   };
 }
 
@@ -77,8 +98,8 @@ static quaternion quaternion_normalize(const quaternion q) {
 }
 
 static double custom_asin(const double value) {
-  if (value <= -1.0f) return (float)M_PI / -2.0f;
-  if (value >= 1.0f) return (float)M_PI / 2.0f;
+  if (value <= -1.0) return M_PI / -2.0;
+  if (value >= 1.0) return M_PI / 2.0;
   return asinf(value);
 }
 
@@ -94,13 +115,32 @@ static euler quaternion_to_euler(const quaternion q) {
 #define GYRO_MEASUREMENT_COUNT (131) // 32750 / 250
 static vector gyro_to_vector(const int16_t gyro[3], const unsigned int delta_time_ms) {
   const vector v = {
-      .x = ((double)gyro[1] / GYRO_MEASUREMENT_COUNT) * DEG_TO_RAD_FACTOR,
+      .x = ((double)-gyro[1] / GYRO_MEASUREMENT_COUNT) * DEG_TO_RAD_FACTOR,
       .y = ((double)-gyro[0] / GYRO_MEASUREMENT_COUNT) * DEG_TO_RAD_FACTOR,
-      .z = ((double)gyro[2] / GYRO_MEASUREMENT_COUNT) * DEG_TO_RAD_FACTOR
+      .z = ((double)-gyro[2] / GYRO_MEASUREMENT_COUNT) * DEG_TO_RAD_FACTOR
   };
 
   const double delta_time_s = (double)delta_time_ms / 1000;
-  return vector_multipliy_scalar(v, delta_time_s);
+  return vector_multiply_scalar(v, delta_time_s);
+}
+
+static vector accelerometer_to_vector(
+  const int16_t accelerometer[3],
+  const quaternion previous
+) {
+  const vector half_gravity = {
+    .x = previous.x * previous.z - previous.w * previous.y,
+    .y = previous.y * previous.z + previous.w * previous.x,
+    .z = previous.w * previous.w - 0.5 + previous.z * previous.z,
+  };
+
+  vector v = {
+    .x = accelerometer[1],
+    .y = accelerometer[0],
+    .z = accelerometer[2],
+  };
+
+  return vector_cross_product(vector_normalize(v), half_gravity);
 }
 
 int main() {
@@ -142,27 +182,25 @@ int main() {
     // printf("accelerationX=%d;accelerationY=%d;accelerationZ=%d;gyroX=%d;gyroY=%d;gyroZ=%d\n",
     //   acceleration[0], acceleration[1], acceleration[2], gyro[0], gyro[1], gyro[2]);
 
+    const vector accelerometer_vec = accelerometer_to_vector(acceleration, quat);
+    // printf("x=%f;y=%f;y=%f\n", accelerometer_vec.x, accelerometer_vec.y, accelerometer_vec.z);
+
     const vector gyro_vec = gyro_to_vector(gyro, 50);
-    const vector half_gyro_vec = vector_multipliy_scalar(gyro_vec, 0.5);
+    const vector half_gyro_vec = vector_multiply_scalar(gyro_vec, 0.5);
     // printf("x=%f;y=%f;y=%f\n", gyro_vec.x, gyro_vec.y, gyro_vec.z);
+
+    const vector feedback = vector_add(
+      half_gyro_vec,
+      vector_multiply_scalar(accelerometer_vec, 0.5));
 
     quat = quaternion_normalize(
       quaternion_add(
         quat,
-        quaternion_multiply_vector(quat, half_gyro_vec)));
+        quaternion_multiply_vector(quat, feedback))); //feedback
     // printf("w=%f;x=%f;y=%f;y=%f\n", quat.w, quat.x, quat.y, quat.z);
 
     euler angles = quaternion_to_euler(quat);
     printf("roll=%f;pitch=%f;yaw=%f\n", angles.roll, angles.pitch, angles.yaw);
-
-    // uint8_t fifo_data[DMP_FIFO_PACKET_LENGTH] = {};
-    // // if (mpu6050_read_fifo_packet(i2c_default, fifo_data) < 0) {
-    // //   puts("MPU-6050 read FIFO packet failed");
-    // // }
-    // for (unsigned int i = 0; i < DMP_FIFO_PACKET_LENGTH; i++) {
-    //   printf("fifo%d=%d, ", i, fifo_data[i]);
-    // }
-    // printf("\n");
 
     sleep_ms(50);
   }
