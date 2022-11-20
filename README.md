@@ -1,32 +1,32 @@
-
 # Table of Contents
 
-1.  [Project Ikaros](#org95942c2)
-    1.  [Goals](#org4879789)
-    2.  [Milestones](#org99fdbdc)
-    3.  [Getting Started](#org708160c)
-        1.  [Prerequisites](#org0dc640d)
-        2.  [Compilation](#org4bf9721)
-        3.  [Useful Make Targets](#orga968f14)
-    4.  [Hardware](#org26516b4)
-        1.  [uC](#orgf5222ed)
-        2.  [Accelerometer](#org042198a)
-        3.  [Barometer](#orge1e1036)
-    5.  [Software Components](#org32aa799)
-        1.  [Flight Controller](#orga92523b)
-        2.  [Tower](#org74973d0)
-        3.  [Random Data Generator](#org1bce8af)
-        4.  [Serial Data Relay](#org3e3d280)
-        5.  [Data Store](#orge522247)
-        6.  [CSM - Comma Separated Map](#org132c3b8)
+- [Table of Contents](#table-of-contents)
+- [Project Ikaros](#project-ikaros)
+  - [Goals](#goals)
+  - [Milestones](#milestones)
+  - [Getting Started](#getting-started)
+    - [Prerequisites](#prerequisites)
+    - [Compilation](#compilation)
+    - [Useful Make Targets](#useful-make-targets)
+  - [Hardware](#hardware)
+    - [uC](#uc)
+    - [Accelerometer](#accelerometer)
+    - [Barometer](#barometer)
+  - [Software Components](#software-components)
+    - [Flight Controller](#flight-controller)
+    - [Tower](#tower)
+    - [Random Data Generator](#random-data-generator)
+    - [Serial Data Relay](#serial-data-relay)
+    - [Data Store](#data-store)
+    - [CSM - Comma Separated Map](#csm---comma-separated-map)
 
 
-<a id="org95942c2"></a>
+<a id="orge3ab56d"></a>
 
 # Project Ikaros
 
 
-<a id="org4879789"></a>
+<a id="org9814574"></a>
 
 ## Goals
 
@@ -35,7 +35,7 @@ hardware concepts while trying to build some sort of
 self-stabilizing aerial vehicle (e.g. drone, plane, etc.).
 
 
-<a id="org99fdbdc"></a>
+<a id="orgfecf16c"></a>
 
 ## Milestones
 
@@ -43,7 +43,7 @@ self-stabilizing aerial vehicle (e.g. drone, plane, etc.).
     props)
 -   [X] Choose software stack (uC, base station, persistence)
 -   [X] Display fake sensor data
--   [ ] Display live sensor data
+-   [X] Display live sensor data
 -   [ ] Get reliable sensor readings under motor vibrations
 -   [ ] Persist sensor data and display historical data
 -   [ ] Build test frame to balance a single motor powered lever
@@ -51,14 +51,14 @@ self-stabilizing aerial vehicle (e.g. drone, plane, etc.).
 -   **TBD**
 
 
-<a id="org708160c"></a>
+<a id="org2a042ab"></a>
 
 ## Getting Started
 
 A quick guide to get the project up and running.
 
 
-<a id="org0dc640d"></a>
+<a id="orgc32145c"></a>
 
 ### Prerequisites
 
@@ -104,7 +104,7 @@ next section.
         picotool. The following commands only apply to macOS using
         brew:
         
-            brew install gcc-arm-embedded libusb cmake pkg-config
+            brew install gcc-arm-embedded libusb cmake
     
     3.  Build the pico-sdk project:
         
@@ -113,7 +113,7 @@ next section.
     
     4.  Build the picotool project:
         
-            cd picotool
+            cd pico-tool
             mkdir build
             cd build
             export PICO_SDK_PATH=../../pico-sdk
@@ -129,7 +129,7 @@ next section.
         updates can be applied with `make flash-pico`.
 
 
-<a id="org4bf9721"></a>
+<a id="orgb25c0ad"></a>
 
 ### Compilation
 
@@ -139,7 +139,7 @@ and some additional tools. Running `make` in the project root
 will compile all subprojects and output their binaries to `bin/`.
 
 
-<a id="orga968f14"></a>
+<a id="org979451b"></a>
 
 ### Useful Make Targets
 
@@ -211,14 +211,14 @@ A short reference on the most used make targets:
 </table>
 
 
-<a id="org26516b4"></a>
+<a id="orga354b2f"></a>
 
 ## Hardware
 
 Some thoughts on different hardware options that could be used.
 
 
-<a id="orgf5222ed"></a>
+<a id="orgee0e80c"></a>
 
 ### uC
 
@@ -240,7 +240,7 @@ Possible microcontrollers to execute the control loop on.
     Adafruit projects. Costing only around 5 € (or 8 € with WIFI).
 
 
-<a id="org042198a"></a>
+<a id="orgbe1d299"></a>
 
 ### Accelerometer
 
@@ -261,14 +261,14 @@ Possible accelerometer sensors.
     up resources on the main uC.
 
 
-<a id="orge1e1036"></a>
+<a id="org46a584a"></a>
 
 ### Barometer
 
 **TBD**
 
 
-<a id="org32aa799"></a>
+<a id="org801fa0b"></a>
 
 ## Software Components
 
@@ -283,7 +283,7 @@ Possible accelerometer sensors.
 -   Serial Data Relay (CLI)
 
 
-<a id="orga92523b"></a>
+<a id="org7b659c5"></a>
 
 ### Flight Controller
 
@@ -296,13 +296,13 @@ want to give Forth a try.
 
 1.  Features
 
-    -   [ ] Sends sensor data via serial port to the base station
+    -   [X] Sends sensor data via serial port to the base station
     -   [ ] Runs a simple PID loop to control a single actuator
     -   [ ] Sends sensor data via WIFI to the Message Broker directly
     -   [ ] Controls multiple actuators
 
 
-<a id="org74973d0"></a>
+<a id="orgbab6508"></a>
 
 ### Tower
 
@@ -317,7 +317,7 @@ sub-components for further details.
     
     1.  Features
     
-        -   [ ] Displays live data received from the Message Broker via an
+        -   [X] Displays live data received from the Message Broker via an
             auto-scrolling line graph
         -   [ ] Displays historical data received from its own backend or
             the broker? **TBD**
@@ -329,7 +329,7 @@ sub-components for further details.
     
     1.  Features
     
-        -   [ ] Handle basic message fan out
+        -   [X] Handle basic message fan out
         -   [ ] Require authentication for message posting
         -   [ ] Require authentication for message reading
     
@@ -357,7 +357,7 @@ sub-components for further details.
         -   [ ] Persist messages in the Data Store
 
 
-<a id="org1bce8af"></a>
+<a id="org57eedf3"></a>
 
 ### Random Data Generator
 
@@ -366,11 +366,11 @@ submits random data in a specified range.
 
 1.  Features
 
-    -   [ ] Connect to the Message Broker and submmit data
-    -   [ ] Submit a sine wave in a specifiable range
+    -   [X] Connect to the Message Broker and submmit data
+    -   [X] Submit a sine wave
 
 
-<a id="org3e3d280"></a>
+<a id="org5dfeeb1"></a>
 
 ### Serial Data Relay
 
@@ -379,11 +379,11 @@ incoming data to the Message Broker.
 
 1.  Features
 
-    -   [ ] Read from the serial port and print the data to stdout
-    -   [ ] Relay data to the Message Broker on a configurable topic
+    -   [X] Read from the serial port and print the data to stdout
+    -   [X] Relay data to the Message Broker
 
 
-<a id="orge522247"></a>
+<a id="org3060ec0"></a>
 
 ### Data Store
 
@@ -396,7 +396,7 @@ The persistent storage layer of the project.
     -   [ ] Compress the stored data to save disk space
 
 
-<a id="org132c3b8"></a>
+<a id="org179b9f9"></a>
 
 ### CSM - Comma Separated Map
 

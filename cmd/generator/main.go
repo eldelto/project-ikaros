@@ -37,6 +37,7 @@ func main() {
 		}
 
 		data := map[string]any{
+			"graph":     "Waves",
 			"sine":      math.Sin(value),
 			"cosine":    math.Cos(value),
 			"timestamp": time.Now(),
