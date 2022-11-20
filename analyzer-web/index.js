@@ -4,16 +4,20 @@ import * as THREE from "three";
 import { Quaternion } from "three";
 
 const colorHash = new ColorHash();
-let quaternion = new Quaternion(0, 0, 0, 1);
 
 window.onload = function () {
-  const graph = initGraph();
-  init3d();
-  connectToWebSocket(graph);
+  connectToWebSocket();
 };
 
-function initGraph() {
-  const ctx = document.getElementById("graph").getContext("2d");
+const graphMap = new Map();
+function initGraph(name) {
+  const canvas = document.createElement("canvas");
+  canvas.setAttribute("id", "graph-" + name);
+
+  const graphContent = document.querySelector("#graph-content");
+  graphContent.appendChild(canvas);
+
+  const ctx = canvas.getContext("2d");
 
   const config = {
     type: "line",
@@ -28,31 +32,40 @@ function initGraph() {
         point: {
           radius: 0
         }
+      },
+      plugins: {
+        title: {
+          display: true,
+          text: name
+        }
       }
     }
   };
 
-  return new Chart(ctx, config);
+  const graph = new Chart(ctx, config);
+  graphMap.set(name, graph);
+
+  return graph;
 }
 
-function connectToWebSocket(graph) {
+function connectToWebSocket() {
   const webSocket = new WebSocket(constructWebsocketUrl("/consumers/ws"));
   webSocket.onmessage = (message) => {
     const event = JSON.parse(message.data);
     const sensorMap = parseEventToMap(event);
-    pushSensorData(graph, sensorMap, event.timestamp);
 
-    quaternion.x = -sensorMap.get("y");
-    quaternion.y = -sensorMap.get("z");
-    quaternion.z = sensorMap.get("x");
-    quaternion.w = sensorMap.get("w");
+    if (event.graph === "inclination") {
+      update3d(sensorMap);
+    } else {
+      pushSensorData(event.graph, sensorMap, event.timestamp);
+    }
   };
 }
 
 function parseEventToMap(event) {
   const sensorMap = new Map();
   Object.keys(event).forEach((key) => {
-    if (key !== "timestamp") {
+    if (key !== "timestamp" && key !== "graph") {
       sensorMap.set(key, event[key]);
     }
   });
@@ -60,7 +73,12 @@ function parseEventToMap(event) {
   return sensorMap;
 }
 
-function pushSensorData(graph, sensorMap, timestamp) {
+function pushSensorData(graphName, sensorMap, timestamp) {
+  let graph = graphMap.get(graphName)
+  if (graph === undefined) {
+    graph = initGraph(graphName);
+  }
+
   Array.from(sensorMap.keys())
     .sort()
     .forEach((key, index) => {
@@ -96,6 +114,8 @@ function constructWebsocketUrl(endpoint) {
   return wsProtocol + "://" + host + endpoint;
 }
 
+let quaternion = new Quaternion(0, 0, 0, 1);
+let is3dInitialized = false;
 function init3d() {
   const canvas = document.getElementById("3d");
 
@@ -148,3 +168,14 @@ function init3d() {
   updater();
 }
 
+function update3d(sensorMap) {
+  if (!is3dInitialized) {
+    init3d();
+    is3dInitialized = true;
+  }
+
+  quaternion.x = -sensorMap.get("y");
+  quaternion.y = -sensorMap.get("z");
+  quaternion.z = sensorMap.get("x");
+  quaternion.w = sensorMap.get("w");
+};

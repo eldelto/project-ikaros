@@ -69,11 +69,12 @@ func parseCSM(csm string) (map[string]any, error) {
 		key := parts[0]
 		value := parts[1]
 		floatValue, err := strconv.ParseFloat(value, 64)
-		if err != nil {
-			return nil, fmt.Errorf("failed to convert value '%s' to float64: %w", value, err)
+		if err == nil {
+			data[key] = floatValue
+			continue
 		}
 
-		data[key] = floatValue
+		data[key] = value
 	}
 
 	return data, nil
