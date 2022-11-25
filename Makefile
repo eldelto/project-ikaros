@@ -44,7 +44,7 @@ clean:
 	@rm -rf flight-controller/build
 
 # Tower
-bin/tower: .FORCE internal/tower/api/assets/index.js
+bin/tower: .FORCE internal/tower/api/assets/index.js $(wildcard tower/api/assets/*.css) $(wildcard tower/api/assets/*.html)
 	@go build -o bin/tower cmd/tower/main.go
 
 internal/tower/api/assets/index.js: $(wildcard analyzer-web/*.js)

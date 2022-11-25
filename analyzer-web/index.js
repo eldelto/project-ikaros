@@ -117,10 +117,11 @@ function constructWebsocketUrl(endpoint) {
 let quaternion = new Quaternion(0, 0, 0, 1);
 let is3dInitialized = false;
 function init3d() {
-  const canvas = document.getElementById("3d");
+  const container = document.getElementById("container-3d");
 
   //create a scene
   const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xffffff);
 
   //create a cube
   const cube = new THREE.Mesh(
@@ -129,20 +130,18 @@ function init3d() {
 
     //apply a mesh basic material to our mesh
     new THREE.MeshLambertMaterial({
-      color: 0x00ffff
+      color: 0x38a81e
     })
   );
   //add our mesh to the scene
   scene.add(cube);
 
-  const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+  const camera = new THREE.PerspectiveCamera(45, 2, 0.1, 100);
   scene.add(camera);
   camera.position.x = -2;
   camera.position.y = 2;
   camera.position.z = 3;
-  camera.rotateX(-0.5);
-  camera.rotateY(-0.5);
-  camera.rotateZ(-0.3);
+  camera.lookAt(cube.position);
 
   const ambientLight = new THREE.HemisphereLight(0xcccccc, 0.4);
   scene.add(ambientLight);
@@ -151,9 +150,22 @@ function init3d() {
   camera.add(pointLight);
 
   //create renderer
-  const renderer = new THREE.WebGLRenderer({ canvas });
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  const renderer = new THREE.WebGLRenderer();
+  renderer.setSize(container.clientWidth, container.clientHeight);
   renderer.render(scene, camera);
+  container.appendChild(renderer.domElement);
+
+  const resizeHandler = () => {
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+    renderer.setSize(width, height);
+  }
+
+  const resizeObserver = new ResizeObserver(resizeHandler);
+  resizeObserver.observe(container, { box: 'content-box' });
 
   const updater = () => {
     //call the same function again

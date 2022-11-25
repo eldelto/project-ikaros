@@ -167,7 +167,7 @@ int main() {
     "MPU-6050 gyro config failed");
   handle_error(mpu6050_configure_accel(i2c_default, ACCEL_RANGE_2G),
     "MPU-6050 accel config failed");
-  handle_error(mpu6050_configure_dlpf(i2c_default, DLPF_44HZ), "MPU-6050 DLPF config failed");
+  handle_error(mpu6050_configure_dlpf(i2c_default, DLPF_94HZ), "MPU-6050 DLPF config failed");
 
   int16_t acceleration[3], gyro[3];
   quaternion quat = IDENTITY_QUATERNION;
@@ -202,7 +202,7 @@ int main() {
     euler angles = quaternion_to_euler(quat);
     printf("graph=Euler Angles;roll=%f;pitch=%f;yaw=%f\n", angles.roll, angles.pitch, angles.yaw);
 
-    sleep_ms(50);
+    sleep_ms(100);
   }
 
   return 0;
