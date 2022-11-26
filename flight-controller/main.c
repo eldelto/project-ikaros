@@ -112,12 +112,13 @@ static euler quaternion_to_euler(const quaternion q) {
   };
 }
 
-#define GYRO_MEASUREMENT_COUNT (131) // 32750 / 250
+#define GYRO_MEASUREMENT_COUNT_250 (131) // 32750 / 250
+#define GYRO_MEASUREMENT_COUNT_500 (65.5) // 32750 / 500
 static vector gyro_to_vector(const int16_t gyro[3], const unsigned int delta_time_ms) {
   const vector v = {
-      .x = ((double)-gyro[1] / GYRO_MEASUREMENT_COUNT) * DEG_TO_RAD_FACTOR,
-      .y = ((double)-gyro[0] / GYRO_MEASUREMENT_COUNT) * DEG_TO_RAD_FACTOR,
-      .z = ((double)-gyro[2] / GYRO_MEASUREMENT_COUNT) * DEG_TO_RAD_FACTOR
+      .x = ((double)-gyro[1] / GYRO_MEASUREMENT_COUNT_500) * DEG_TO_RAD_FACTOR,
+      .y = ((double)-gyro[0] / GYRO_MEASUREMENT_COUNT_500) * DEG_TO_RAD_FACTOR,
+      .z = ((double)-gyro[2] / GYRO_MEASUREMENT_COUNT_500) * DEG_TO_RAD_FACTOR
   };
 
   const double delta_time_s = (double)delta_time_ms / 1000;
@@ -163,7 +164,7 @@ int main() {
     PICO_DEFAULT_I2C_SCL_PIN, GPIO_FUNC_I2C));
 
   handle_error(mpu6050_init(i2c_default), "MPU-6050 init failed");
-  handle_error(mpu6050_configure_gyro(i2c_default, GYRO_RANGE_250_DEG),
+  handle_error(mpu6050_configure_gyro(i2c_default, GYRO_RANGE_500_DEG),
     "MPU-6050 gyro config failed");
   handle_error(mpu6050_configure_accel(i2c_default, ACCEL_RANGE_2G),
     "MPU-6050 accel config failed");
@@ -172,6 +173,8 @@ int main() {
   int16_t acceleration[3], gyro[3];
   quaternion quat = IDENTITY_QUATERNION;
 
+#define SAMPLE_RATE_MS (50)
+#define MIX_FACTOR (0.2)
   while (true) {
     if (mpu6050_read_raw_accel(i2c_default, acceleration) < 0)
       puts("Failed to read raw acceleration data");
@@ -185,13 +188,13 @@ int main() {
     const vector accelerometer_vec = accelerometer_to_vector(acceleration, quat);
     // printf("x=%f;y=%f;y=%f\n", accelerometer_vec.x, accelerometer_vec.y, accelerometer_vec.z);
 
-    const vector gyro_vec = gyro_to_vector(gyro, 50);
+    const vector gyro_vec = gyro_to_vector(gyro, SAMPLE_RATE_MS);
     const vector half_gyro_vec = vector_multiply_scalar(gyro_vec, 0.5);
     // printf("x=%f;y=%f;y=%f\n", gyro_vec.x, gyro_vec.y, gyro_vec.z);
 
     const vector feedback = vector_add(
       half_gyro_vec,
-      vector_multiply_scalar(accelerometer_vec, 0.5));
+      vector_multiply_scalar(accelerometer_vec, MIX_FACTOR));
 
     quat = quaternion_normalize(
       quaternion_add(
@@ -202,7 +205,7 @@ int main() {
     euler angles = quaternion_to_euler(quat);
     printf("graph=Euler Angles;roll=%f;pitch=%f;yaw=%f\n", angles.roll, angles.pitch, angles.yaw);
 
-    sleep_ms(100);
+    sleep_ms(SAMPLE_RATE_MS);
   }
 
   return 0;
