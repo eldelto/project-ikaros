@@ -44,6 +44,7 @@
 #define DLPF_21HZ               (0x04)
 #define DLPF_10HZ               (0x05)
 #define DLPF_5HZ                (0x06)
+#define DATA_RDY_EN             (0x01)
 
 // Misc constants
 #define MPU6050_ADDRESS         (0x68)
@@ -57,6 +58,7 @@ int mpu6050_configure_accel(i2c_inst_t* i2c, uint8_t config);
 int mpu6050_configure_dlpf(i2c_inst_t* i2c, uint8_t config);
 int mpu6050_read_raw_gyro(i2c_inst_t* i2c, int16_t data[3]);
 int mpu6050_read_raw_accel(i2c_inst_t* i2c, int16_t data[3]);
+int mpu6050_enable_interrupt(i2c_inst_t* i2c, uint8_t config);
 
 
 // TODO: Validate if those actually work.

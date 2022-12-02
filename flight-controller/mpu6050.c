@@ -301,6 +301,23 @@ int mpu6050_init(i2c_inst_t* i2c) {
   return 0;
 }
 
+int mpu6050_enable_interrupt(i2c_inst_t* i2c, uint8_t config) {
+  // const uint8_t address = INT_ENABLE;
+  // if (i2c_write_timeout_us(i2c, MPU6050_ADDRESS, &address, 1, true, 1000) < 1)
+  //   return -1;
+
+  // uint8_t current_config;
+  // if (i2c_read_timeout_us(i2c, MPU6050_ADDRESS, &current_config, 1, false, 1000) < 1)
+  //   return -1;
+
+  const uint8_t data[2] = { INT_ENABLE, config };
+  // const uint8_t data[2] = { GYRO_CONFIG, config };
+  if (i2c_write_timeout_us(i2c, MPU6050_ADDRESS, data, 2, false, 1000) < 2)
+    return -1;
+
+  return -1;
+}
+
 // TODO: Verify that the following functions actually work.
 int mpu6050_reset_fifo(i2c_inst_t* i2c) {
   uint8_t data[2] = { INT_ENABLE, BIT_DMP_INT_EN };

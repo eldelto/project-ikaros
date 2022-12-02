@@ -144,6 +144,10 @@ static vector accelerometer_to_vector(
   return vector_cross_product(vector_normalize(v), half_gravity);
 }
 
+static void interrupt_callback(const uint gpio, const uint32_t events) {
+    printf("Interrupt on GPIO %d %d\n", gpio, events);
+}
+
 int main() {
   stdio_init_all();
 
@@ -163,12 +167,15 @@ int main() {
   bi_decl(bi_2pins_with_func(PICO_DEFAULT_I2C_SDA_PIN,
     PICO_DEFAULT_I2C_SCL_PIN, GPIO_FUNC_I2C));
 
+  gpio_set_irq_enabled_with_callback(13, GPIO_IRQ_EDGE_RISE, true, &interrupt_callback);
+
   handle_error(mpu6050_init(i2c_default), "MPU-6050 init failed");
   handle_error(mpu6050_configure_gyro(i2c_default, GYRO_RANGE_500_DEG),
     "MPU-6050 gyro config failed");
   handle_error(mpu6050_configure_accel(i2c_default, ACCEL_RANGE_2G),
     "MPU-6050 accel config failed");
   handle_error(mpu6050_configure_dlpf(i2c_default, DLPF_94HZ), "MPU-6050 DLPF config failed");
+  handle_error(mpu6050_enable_interrupt(i2c_default, DATA_RDY_EN), "MPU-6050 interrupt enabling failed");
 
   int16_t acceleration[3], gyro[3];
   quaternion quat = IDENTITY_QUATERNION;
