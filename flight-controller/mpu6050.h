@@ -14,6 +14,7 @@
 #define GYRO_OUT                (0x43)
 #define GYRO_CONFIG             (0x1B)
 #define ACCEL_CONFIG            (0x1C)
+#define SMPRT_DIV               (0x19)
 
 #define DINA20                  (0x20)
 #define DINA28                  (0x28)
@@ -44,6 +45,7 @@
 #define DLPF_21HZ               (0x04)
 #define DLPF_10HZ               (0x05)
 #define DLPF_5HZ                (0x06)
+#define DATA_RDY_EN             (0x01)
 
 // Misc constants
 #define MPU6050_ADDRESS         (0x68)
@@ -52,11 +54,13 @@
 #define DMP_FIFO_PACKET_LENGTH  (16)
 
 int mpu6050_init(i2c_inst_t* i2c);
+int mpu6050_configure_sample_rate(i2c_inst_t* i2c, uint8_t sample_rate_divider);
 int mpu6050_configure_gyro(i2c_inst_t* i2c, uint8_t config);
 int mpu6050_configure_accel(i2c_inst_t* i2c, uint8_t config);
 int mpu6050_configure_dlpf(i2c_inst_t* i2c, uint8_t config);
 int mpu6050_read_raw_gyro(i2c_inst_t* i2c, int16_t data[3]);
 int mpu6050_read_raw_accel(i2c_inst_t* i2c, int16_t data[3]);
+int mpu6050_enable_interrupt(i2c_inst_t* i2c, uint8_t config);
 
 
 // TODO: Validate if those actually work.
