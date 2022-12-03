@@ -6,14 +6,21 @@
 #include "hardware/i2c.h"
 #include "mpu6050.h"
 
-static void handle_error(const int error_value, const char const* error_message) {
-  if (error_value >= 0)
-    return;
+#define DATA_BUFFER_LEN (3)
+typedef struct {
+  unsigned int pointer;
+  int16_t data[DATA_BUFFER_LEN][3];
+} ring_buffer;
 
-  while (true) {
-    puts(error_message);
-    sleep_ms(1000);
-  }
+static void ring_buffer_insert(ring_buffer* buffer, int16_t data[3]) {
+  memcpy(buffer->data[buffer->pointer], data, sizeof buffer->data[0]);
+  buffer->pointer = (buffer->pointer + 1) % DATA_BUFFER_LEN;
+}
+
+static void ring_buffer_mean(ring_buffer* buffer, int16_t mean[3]) {
+  for (unsigned int i = 0; i < DATA_BUFFER_LEN; ++i)
+    for (unsigned int j = 0; j < 3; ++j)
+      mean[j] += (buffer->data[i][j] / DATA_BUFFER_LEN);
 }
 
 typedef struct {
@@ -144,8 +151,31 @@ static vector accelerometer_to_vector(
   return vector_cross_product(vector_normalize(v), half_gravity);
 }
 
+static void handle_error(const int error_value, const char const* error_message) {
+  if (error_value >= 0)
+    return;
+
+  while (true) {
+    puts(error_message);
+    sleep_ms(1000);
+  }
+}
+
+int16_t gyro[3], acceleration[3];
+ring_buffer gyro_data = {
+  .pointer = 0,
+};
+ring_buffer acceleration_data = {
+  .pointer = 0,
+};
 static void interrupt_callback(const uint gpio, const uint32_t events) {
-    printf("Interrupt on GPIO %d %d\n", gpio, events);
+  if (mpu6050_read_raw_gyro(i2c_default, gyro) < 0)
+    puts("Failed to read raw gyro data");
+  ring_buffer_insert(&gyro_data, gyro);
+
+  if (mpu6050_read_raw_accel(i2c_default, acceleration) < 0)
+    puts("Failed to read raw acceleration data");
+  ring_buffer_insert(&acceleration_data, acceleration);
 }
 
 int main() {
@@ -169,35 +199,41 @@ int main() {
 
   gpio_set_irq_enabled_with_callback(13, GPIO_IRQ_EDGE_RISE, true, &interrupt_callback);
 
-  handle_error(mpu6050_init(i2c_default), "MPU-6050 init failed");
+  handle_error(mpu6050_init(i2c_default),
+    "MPU-6050 init failed");
   handle_error(mpu6050_configure_gyro(i2c_default, GYRO_RANGE_500_DEG),
     "MPU-6050 gyro config failed");
   handle_error(mpu6050_configure_accel(i2c_default, ACCEL_RANGE_2G),
     "MPU-6050 accel config failed");
-  handle_error(mpu6050_configure_dlpf(i2c_default, DLPF_94HZ), "MPU-6050 DLPF config failed");
-  handle_error(mpu6050_enable_interrupt(i2c_default, DATA_RDY_EN), "MPU-6050 interrupt enabling failed");
+  handle_error(mpu6050_configure_dlpf(i2c_default, DLPF_94HZ),
+    "MPU-6050 DLPF config failed");
+  handle_error(mpu6050_configure_sample_rate(i2c_default, 20),
+    "MPU-6050 sample rate config failed");
+  handle_error(mpu6050_enable_interrupt(i2c_default, DATA_RDY_EN),
+    "MPU-6050 interrupt enabling failed");
 
-  int16_t acceleration[3], gyro[3];
+  int16_t gyro_mean[3], acceleration_mean[3];
   quaternion quat = IDENTITY_QUATERNION;
+
+  // TODO: Wait for first interrupt to populate data
+  sleep_ms(1000);
 
 #define SAMPLE_RATE_MS (50)
 #define MIX_FACTOR (0.2)
   while (true) {
-    if (mpu6050_read_raw_accel(i2c_default, acceleration) < 0)
-      puts("Failed to read raw acceleration data");
+    for (unsigned int i = 0; i < 3; ++i) {
+      gyro_mean[i] = 0;
+      acceleration_mean[i] = 0;
+    }
 
-    if (mpu6050_read_raw_gyro(i2c_default, gyro) < 0)
-      puts("Failed to read raw gyro data");
-
-    // printf("accelerationX=%d;accelerationY=%d;accelerationZ=%d;gyroX=%d;gyroY=%d;gyroZ=%d\n",
-    //   acceleration[0], acceleration[1], acceleration[2], gyro[0], gyro[1], gyro[2]);
-
-    const vector accelerometer_vec = accelerometer_to_vector(acceleration, quat);
-    // printf("x=%f;y=%f;y=%f\n", accelerometer_vec.x, accelerometer_vec.y, accelerometer_vec.z);
-
-    const vector gyro_vec = gyro_to_vector(gyro, SAMPLE_RATE_MS);
+    ring_buffer_mean(&gyro_data, gyro_mean);
+    const vector gyro_vec = gyro_to_vector(gyro_mean, SAMPLE_RATE_MS);
     const vector half_gyro_vec = vector_multiply_scalar(gyro_vec, 0.5);
     // printf("x=%f;y=%f;y=%f\n", gyro_vec.x, gyro_vec.y, gyro_vec.z);
+
+    ring_buffer_mean(&acceleration_data, acceleration_mean);
+    const vector accelerometer_vec = accelerometer_to_vector(acceleration_mean, quat);
+    // printf("x=%f;y=%f;z=%f\n", accelerometer_vec.x, accelerometer_vec.y, accelerometer_vec.z);
 
     const vector feedback = vector_add(
       half_gyro_vec,

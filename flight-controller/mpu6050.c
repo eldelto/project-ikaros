@@ -210,7 +210,15 @@ static const uint8_t dmp_firmware[DMP_CODE_SIZE] = {
   0xa6, 0xd9, 0x00, 0xd8, 0xf1, 0xff
 };
 
-int16_t gyro_drift[3] = {0, 0, 0};
+int16_t gyro_drift[3] = { 0, 0, 0 };
+
+int mpu6050_configure_sample_rate(i2c_inst_t* i2c, uint8_t sample_rate_divider) {
+  const uint8_t data[2] = { SMPRT_DIV, sample_rate_divider };
+  if (i2c_write_blocking(i2c, MPU6050_ADDRESS, data, 2, false) < 2)
+    return -1;
+
+  return 0;
+}
 
 int mpu6050_configure_gyro(i2c_inst_t* i2c, uint8_t config) {
   const uint8_t data[2] = { GYRO_CONFIG, config };
@@ -284,14 +292,14 @@ int mpu6050_init(i2c_inst_t* i2c) {
   if (i2c_write_blocking(i2c, MPU6050_ADDRESS, data, 2, false) < 2)
     return -1;
 
-  int16_t gyro[3], gyro_sum[3] = {0, 0, 0};
+  int16_t gyro[3], gyro_sum[3] = { 0, 0, 0 };
   const int iterations = 20;
 
   for (unsigned int i = 0; i < iterations; ++i) {
     if (mpu6050_read_raw_gyro(i2c, gyro) < 0)
       return -1;
 
-    for(unsigned int j = 0; j < 3; ++j)
+    for (unsigned int j = 0; j < 3; ++j)
       gyro_sum[j] += gyro[j];
   }
 
@@ -302,20 +310,11 @@ int mpu6050_init(i2c_inst_t* i2c) {
 }
 
 int mpu6050_enable_interrupt(i2c_inst_t* i2c, uint8_t config) {
-  // const uint8_t address = INT_ENABLE;
-  // if (i2c_write_timeout_us(i2c, MPU6050_ADDRESS, &address, 1, true, 1000) < 1)
-  //   return -1;
-
-  // uint8_t current_config;
-  // if (i2c_read_timeout_us(i2c, MPU6050_ADDRESS, &current_config, 1, false, 1000) < 1)
-  //   return -1;
-
   const uint8_t data[2] = { INT_ENABLE, config };
-  // const uint8_t data[2] = { GYRO_CONFIG, config };
   if (i2c_write_timeout_us(i2c, MPU6050_ADDRESS, data, 2, false, 1000) < 2)
     return -1;
 
-  return -1;
+  return 0;
 }
 
 // TODO: Verify that the following functions actually work.

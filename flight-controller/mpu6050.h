@@ -14,6 +14,7 @@
 #define GYRO_OUT                (0x43)
 #define GYRO_CONFIG             (0x1B)
 #define ACCEL_CONFIG            (0x1C)
+#define SMPRT_DIV               (0x19)
 
 #define DINA20                  (0x20)
 #define DINA28                  (0x28)
@@ -53,6 +54,7 @@
 #define DMP_FIFO_PACKET_LENGTH  (16)
 
 int mpu6050_init(i2c_inst_t* i2c);
+int mpu6050_configure_sample_rate(i2c_inst_t* i2c, uint8_t sample_rate_divider);
 int mpu6050_configure_gyro(i2c_inst_t* i2c, uint8_t config);
 int mpu6050_configure_accel(i2c_inst_t* i2c, uint8_t config);
 int mpu6050_configure_dlpf(i2c_inst_t* i2c, uint8_t config);
