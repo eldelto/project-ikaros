@@ -66,7 +66,10 @@ static vector vector_multiply_scalar(const vector v, const float scalar) {
 }
 
 static vector vector_normalize(const vector v) {
-  const float length = 1.0 / sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+  const float divisor = sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+  if (divisor == 0) return v; // TODO: Can we prevent this check somehow?
+
+  const float length = 1.0 / divisor;
   return vector_multiply_scalar(v, length);
 }
 
