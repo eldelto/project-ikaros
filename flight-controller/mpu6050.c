@@ -214,7 +214,7 @@ int16_t gyro_drift[3] = { 0, 0, 0 };
 
 int mpu6050_configure_sample_rate(i2c_inst_t* i2c, uint8_t sample_rate_divider) {
   const uint8_t data[2] = { SMPRT_DIV, sample_rate_divider };
-  if (i2c_write_blocking(i2c, MPU6050_ADDRESS, data, 2, false) < 2)
+  if (i2c_write_timeout_us(i2c, MPU6050_ADDRESS, data, 2, false, 10000) < 2)
     return -1;
 
   return 0;
@@ -222,7 +222,7 @@ int mpu6050_configure_sample_rate(i2c_inst_t* i2c, uint8_t sample_rate_divider) 
 
 int mpu6050_configure_gyro(i2c_inst_t* i2c, uint8_t config) {
   const uint8_t data[2] = { GYRO_CONFIG, config };
-  if (i2c_write_blocking(i2c, MPU6050_ADDRESS, data, 2, false) < 2)
+  if (i2c_write_timeout_us(i2c, MPU6050_ADDRESS, data, 2, false, 10000) < 2)
     return -1;
 
   return 0;
@@ -230,7 +230,7 @@ int mpu6050_configure_gyro(i2c_inst_t* i2c, uint8_t config) {
 
 int mpu6050_configure_accel(i2c_inst_t* i2c, uint8_t config) {
   const uint8_t data[2] = { ACCEL_CONFIG, config };
-  if (i2c_write_blocking(i2c, MPU6050_ADDRESS, data, 2, false) < 2)
+  if (i2c_write_timeout_us(i2c, MPU6050_ADDRESS, data, 2, false, 10000) < 2)
     return -1;
 
   return 0;
@@ -238,7 +238,7 @@ int mpu6050_configure_accel(i2c_inst_t* i2c, uint8_t config) {
 
 int mpu6050_configure_dlpf(i2c_inst_t* i2c, uint8_t config) {
   uint8_t data[2] = { CONFIG, config };
-  if (i2c_write_blocking(i2c, MPU6050_ADDRESS, data, 2, false) < 2)
+  if (i2c_write_timeout_us(i2c, MPU6050_ADDRESS, data, 2, false, 10000) < 2)
     return -1;
 
   return 0;
@@ -249,11 +249,11 @@ static int16_t convert_8_to_16_bit(const uint8_t high, const uint8_t low) {
 }
 
 static int mpu6050_read_raw_value(i2c_inst_t* i2c, uint8_t start_address, int16_t data[3]) {
-  if (i2c_write_blocking(i2c, MPU6050_ADDRESS, &start_address, 1, true) < 1)
+  if (i2c_write_timeout_us(i2c, MPU6050_ADDRESS, &start_address, 1, true, 10000) < 1)
     return -1;
 
   uint8_t buffer[6];
-  if (i2c_read_blocking(i2c, MPU6050_ADDRESS, buffer, 6, false) < 6)
+  if (i2c_read_timeout_us(i2c, MPU6050_ADDRESS, buffer, 6, false, 10000) < 6)
     return -1;
 
   for (int i = 0; i < 3; ++i) {
@@ -282,14 +282,14 @@ int mpu6050_init(i2c_inst_t* i2c) {
   // renders the sensor useless unless completely reconfigured.
   // Reset
   // uint8_t data[2] = { PWR_MANAGEMENT, BIT_RESET };
-  // int result = i2c_write_blocking(i2c, MPU6050_ADDRESS, data, 2, false);
+  // int result = i2c_write_timeout_us(i2c, MPU6050_ADDRESS, data, 2, false, 10000);
   // if (result < 0) {
   //   return -1;
   // }
 
   // Wake up
   uint8_t data[2] = { PWR_MANAGEMENT, ZERO };
-  if (i2c_write_blocking(i2c, MPU6050_ADDRESS, data, 2, false) < 2)
+  if (i2c_write_timeout_us(i2c, MPU6050_ADDRESS, data, 2, false, 10000) < 2)
     return -1;
 
   int16_t gyro[3], gyro_sum[3] = { 0, 0, 0 };
@@ -311,7 +311,7 @@ int mpu6050_init(i2c_inst_t* i2c) {
 
 int mpu6050_enable_interrupt(i2c_inst_t* i2c, uint8_t config) {
   const uint8_t data[2] = { INT_ENABLE, config };
-  if (i2c_write_timeout_us(i2c, MPU6050_ADDRESS, data, 2, false, 1000) < 2)
+  if (i2c_write_timeout_us(i2c, MPU6050_ADDRESS, data, 2, false, 10000) < 2)
     return -1;
 
   return 0;
@@ -320,22 +320,22 @@ int mpu6050_enable_interrupt(i2c_inst_t* i2c, uint8_t config) {
 // TODO: Verify that the following functions actually work.
 int mpu6050_reset_fifo(i2c_inst_t* i2c) {
   uint8_t data[2] = { INT_ENABLE, BIT_DMP_INT_EN };
-  if (i2c_write_blocking(i2c, MPU6050_ADDRESS, data, 2, false) < 0)
+  if (i2c_write_timeout_us(i2c, MPU6050_ADDRESS, data, 2, false, 10000) < 0)
     return -1;
 
   data[0] = FIFO_ENABLE;
   data[1] = ZERO;
-  if (i2c_write_blocking(i2c, MPU6050_ADDRESS, data, 2, false) < 0)
+  if (i2c_write_timeout_us(i2c, MPU6050_ADDRESS, data, 2, false, 10000) < 0)
     return -1;
 
   data[0] = USER_CTRL;
   data[1] = BIT_FIFO_RST | BIT_DMP_RST;
-  if (i2c_write_blocking(i2c, MPU6050_ADDRESS, data, 2, false) < 0)
+  if (i2c_write_timeout_us(i2c, MPU6050_ADDRESS, data, 2, false, 10000) < 0)
     return -1;
 
   data[0] = USER_CTRL;
   data[1] = BIT_DMP_EN | BIT_FIFO_EN;
-  if (i2c_write_blocking(i2c, MPU6050_ADDRESS, data, 2, false) < 0)
+  if (i2c_write_timeout_us(i2c, MPU6050_ADDRESS, data, 2, false, 10000) < 0)
     return -1;
 
   return 0;
@@ -354,7 +354,7 @@ static int mpu6050_write_mem(
 ) {
 
   const uint8_t select_bank[3] = { BANK_SEL, memory_address >> 8, memory_address & 0xFF };
-  int result = i2c_write_blocking(i2c, MPU6050_ADDRESS, select_bank, 3, true);
+  int result = i2c_write_timeout_us(i2c, MPU6050_ADDRESS, select_bank, 3, true, 10000);
   if (result < 0) {
     return -1;
   }
@@ -364,7 +364,7 @@ static int mpu6050_write_mem(
   data[0] = MEM_RW;
   memcpy(data + 1, memory_data, length);
 
-  result = i2c_write_blocking(i2c, MPU6050_ADDRESS, data, data_length, false);
+  result = i2c_write_timeout_us(i2c, MPU6050_ADDRESS, data, data_length, false, 10000);
   if (result < 0) {
     free(data);
     return -1;
@@ -393,7 +393,7 @@ int mpu6050_init_dmp(i2c_inst_t* i2c) {
 
   /* Set program start address. */
   uint8_t data[2] = { DMP_START_ADDRESS >> 8, DMP_START_ADDRESS & 0xFF };
-  int result = i2c_write_blocking(i2c, MPU6050_ADDRESS, data, 2, false);
+  int result = i2c_write_timeout_us(i2c, MPU6050_ADDRESS, data, 2, false, 10000);
   if (result < 0) {
     return -1;
   }
@@ -414,12 +414,12 @@ int mpu6050_enable_dmp_quaternion(i2c_inst_t* i2c) {
 
 int mpu6050_read_fifo_packet(i2c_inst_t* i2c, uint8_t* packet_data) {
   uint8_t data = FIFO_RW;
-  int result = i2c_write_blocking(i2c, MPU6050_ADDRESS, &data, 1, true);
+  int result = i2c_write_timeout_us(i2c, MPU6050_ADDRESS, &data, 1, true, 10000);
   if (result < 0) {
     return -1;
   }
 
-  result = i2c_read_blocking(i2c, MPU6050_ADDRESS, packet_data, DMP_FIFO_PACKET_LENGTH, false);
+  result = i2c_read_timeout_us(i2c, MPU6050_ADDRESS, packet_data, DMP_FIFO_PACKET_LENGTH, false, 10000);
   if (result < 0) {
     return -1;
   }

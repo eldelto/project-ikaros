@@ -24,22 +24,22 @@ static void ring_buffer_mean(ring_buffer* buffer, int16_t mean[3]) {
 }
 
 typedef struct {
-  double x;
-  double y;
-  double z;
+  float x;
+  float y;
+  float z;
 } vector;
 
 typedef struct {
-  double w;
-  double x;
-  double y;
-  double z;
+  float w;
+  float x;
+  float y;
+  float z;
 } quaternion;
 
 typedef struct {
-  double roll;
-  double pitch;
-  double yaw;
+  float roll;
+  float pitch;
+  float yaw;
 } euler;
 
 #define RAD_TO_DEG_FACTOR   (57.295)    // 180 / 3.1459
@@ -54,7 +54,7 @@ static vector vector_add(const vector a, const vector b) {
   };
 }
 
-static vector vector_multiply_scalar(const vector v, const double scalar) {
+static vector vector_multiply_scalar(const vector v, const float scalar) {
   return (vector) {
     .x = v.x * scalar,
       .y = v.y * scalar,
@@ -63,7 +63,7 @@ static vector vector_multiply_scalar(const vector v, const double scalar) {
 }
 
 static vector vector_normalize(const vector v) {
-  const double length = 1.0 / sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+  const float length = 1.0 / sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
   return vector_multiply_scalar(v, length);
 }
 
@@ -94,7 +94,7 @@ static quaternion quaternion_add(const quaternion a, const quaternion b) {
 }
 
 static quaternion quaternion_normalize(const quaternion q) {
-  const double length = 1.0 / sqrt(q.w * q.w + q.x * q.x + q.y * q.y + q.z * q.z);
+  const float length = 1.0 / sqrt(q.w * q.w + q.x * q.x + q.y * q.y + q.z * q.z);
 
   return (quaternion) {
     .w = q.w * length,
@@ -104,14 +104,14 @@ static quaternion quaternion_normalize(const quaternion q) {
   };
 }
 
-static double custom_asin(const double value) {
+static float custom_asin(const float value) {
   if (value <= -1.0) return M_PI / -2.0;
   if (value >= 1.0) return M_PI / 2.0;
   return asinf(value);
 }
 
 static euler quaternion_to_euler(const quaternion q) {
-  const double half_y_squared = 0.5 - q.y * q.y;
+  const float half_y_squared = 0.5 - q.y * q.y;
   return (euler) {
     .roll = RAD_TO_DEG_FACTOR * (atan2(q.w * q.x + q.y * q.z, half_y_squared - q.x * q.x)),
       .pitch = RAD_TO_DEG_FACTOR * (custom_asin(2.0 * (q.w * q.y - q.z * q.x))),
@@ -123,12 +123,12 @@ static euler quaternion_to_euler(const quaternion q) {
 #define GYRO_MEASUREMENT_COUNT_500 (65.5) // 32750 / 500
 static vector gyro_to_vector(const int16_t gyro[3], const unsigned int delta_time_ms) {
   const vector v = {
-      .x = ((double)-gyro[1] / GYRO_MEASUREMENT_COUNT_500) * DEG_TO_RAD_FACTOR,
-      .y = ((double)-gyro[0] / GYRO_MEASUREMENT_COUNT_500) * DEG_TO_RAD_FACTOR,
-      .z = ((double)-gyro[2] / GYRO_MEASUREMENT_COUNT_500) * DEG_TO_RAD_FACTOR
+      .x = ((float)-gyro[1] / GYRO_MEASUREMENT_COUNT_500) * DEG_TO_RAD_FACTOR,
+      .y = ((float)-gyro[0] / GYRO_MEASUREMENT_COUNT_500) * DEG_TO_RAD_FACTOR,
+      .z = ((float)-gyro[2] / GYRO_MEASUREMENT_COUNT_500) * DEG_TO_RAD_FACTOR
   };
 
-  const double delta_time_s = (double)delta_time_ms / 1000;
+  const float delta_time_s = (float)delta_time_ms / 1000;
   return vector_multiply_scalar(v, delta_time_s);
 }
 
@@ -168,14 +168,25 @@ ring_buffer gyro_data = {
 ring_buffer acceleration_data = {
   .pointer = 0,
 };
+bool reading = false;
 static void interrupt_callback(const uint gpio, const uint32_t events) {
-  if (mpu6050_read_raw_gyro(i2c_default, gyro) < 0)
+  if (reading) return;
+  reading = true;
+
+  if (mpu6050_read_raw_gyro(i2c_default, gyro) < 0) {
     puts("Failed to read raw gyro data");
+    reading = false;
+    return;
+  }
   ring_buffer_insert(&gyro_data, gyro);
 
-  if (mpu6050_read_raw_accel(i2c_default, acceleration) < 0)
+  if (mpu6050_read_raw_accel(i2c_default, acceleration) < 0) {
     puts("Failed to read raw acceleration data");
+    reading = false;
+    return;
+  }
   ring_buffer_insert(&acceleration_data, acceleration);
+  reading = false;
 }
 
 int main() {
@@ -197,8 +208,6 @@ int main() {
   bi_decl(bi_2pins_with_func(PICO_DEFAULT_I2C_SDA_PIN,
     PICO_DEFAULT_I2C_SCL_PIN, GPIO_FUNC_I2C));
 
-  gpio_set_irq_enabled_with_callback(13, GPIO_IRQ_EDGE_RISE, true, &interrupt_callback);
-
   handle_error(mpu6050_init(i2c_default),
     "MPU-6050 init failed");
   handle_error(mpu6050_configure_gyro(i2c_default, GYRO_RANGE_500_DEG),
@@ -211,6 +220,8 @@ int main() {
     "MPU-6050 sample rate config failed");
   handle_error(mpu6050_enable_interrupt(i2c_default, DATA_RDY_EN),
     "MPU-6050 interrupt enabling failed");
+
+  gpio_set_irq_enabled_with_callback(13, GPIO_IRQ_EDGE_RISE, true, &interrupt_callback);
 
   int16_t gyro_mean[3], acceleration_mean[3];
   quaternion quat = IDENTITY_QUATERNION;
