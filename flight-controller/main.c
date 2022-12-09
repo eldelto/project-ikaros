@@ -4,6 +4,7 @@
 #include "pico/stdlib.h"
 #include "pico/binary_info.h"
 #include "hardware/i2c.h"
+#include "hardware/watchdog.h"
 #include "mpu6050.h"
 
 /* Ring Buffer */
@@ -190,6 +191,7 @@ static void read_raw_values() {
 }
 
 int main() {
+  watchdog_enable(100, 1);
   stdio_init_all();
 
 #if !defined(i2c_default)
@@ -223,6 +225,8 @@ int main() {
   quaternion quat = IDENTITY_QUATERNION;
 
   while (true) {
+    watchdog_update();
+
     for (unsigned int i = 0; i < DATA_BUFFER_LEN; ++i)
       read_raw_values();
 
