@@ -6,6 +6,7 @@
 #include "hardware/i2c.h"
 #include "mpu6050.h"
 
+/* Ring Buffer */
 #define DATA_BUFFER_LEN (3)
 typedef struct {
   unsigned int pointer;
@@ -23,6 +24,7 @@ static void ring_buffer_mean(ring_buffer* buffer, int16_t mean[3]) {
       mean[j] += (buffer->data[i][j] / DATA_BUFFER_LEN);
 }
 
+/* Quaternion Calculation */
 typedef struct {
   float x;
   float y;
@@ -151,6 +153,10 @@ static vector accelerometer_to_vector(
   return vector_cross_product(vector_normalize(v), half_gravity);
 }
 
+/* Main Logic */
+#define SAMPLE_RATE_MS (50)
+#define MIX_FACTOR (0.2)
+
 static void handle_error(const int error_value, const char const* error_message) {
   if (error_value >= 0)
     return;
@@ -168,25 +174,19 @@ ring_buffer gyro_data = {
 ring_buffer acceleration_data = {
   .pointer = 0,
 };
-bool reading = false;
-static void interrupt_callback(const uint gpio, const uint32_t events) {
-  if (reading) return;
-  reading = true;
 
+static void read_raw_values() {
   if (mpu6050_read_raw_gyro(i2c_default, gyro) < 0) {
     puts("Failed to read raw gyro data");
-    reading = false;
     return;
   }
   ring_buffer_insert(&gyro_data, gyro);
 
   if (mpu6050_read_raw_accel(i2c_default, acceleration) < 0) {
     puts("Failed to read raw acceleration data");
-    reading = false;
     return;
   }
   ring_buffer_insert(&acceleration_data, acceleration);
-  reading = false;
 }
 
 int main() {
@@ -218,20 +218,14 @@ int main() {
     "MPU-6050 DLPF config failed");
   handle_error(mpu6050_configure_sample_rate(i2c_default, 20),
     "MPU-6050 sample rate config failed");
-  handle_error(mpu6050_enable_interrupt(i2c_default, DATA_RDY_EN),
-    "MPU-6050 interrupt enabling failed");
-
-  gpio_set_irq_enabled_with_callback(13, GPIO_IRQ_EDGE_RISE, true, &interrupt_callback);
 
   int16_t gyro_mean[3], acceleration_mean[3];
   quaternion quat = IDENTITY_QUATERNION;
 
-  // TODO: Wait for first interrupt to populate data
-  sleep_ms(1000);
-
-#define SAMPLE_RATE_MS (50)
-#define MIX_FACTOR (0.2)
   while (true) {
+    for (unsigned int i = 0; i < DATA_BUFFER_LEN; ++i)
+      read_raw_values();
+
     for (unsigned int i = 0; i < 3; ++i) {
       gyro_mean[i] = 0;
       acceleration_mean[i] = 0;
