@@ -39,7 +39,6 @@
 #define ACCEL_RANGE_8G          (0x10)
 #define ACCEL_RANGE_16G         (0x18)
 #define DLPF_184HZ              (0x01)
-#define DLPF_184HZ              (0x01)
 #define DLPF_94HZ               (0x02)
 #define DLPF_44HZ               (0x03)
 #define DLPF_21HZ               (0x04)

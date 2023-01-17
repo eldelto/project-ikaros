@@ -4,158 +4,11 @@
 #include "pico/stdlib.h"
 #include "pico/binary_info.h"
 #include "hardware/i2c.h"
+#include "hardware/pwm.h"
 #include "hardware/watchdog.h"
 #include "mpu6050.h"
-
-/* Ring Buffer */
-#define DATA_BUFFER_LEN (3)
-typedef struct {
-  unsigned int pointer;
-  int16_t data[DATA_BUFFER_LEN][3];
-} ring_buffer;
-
-static void ring_buffer_insert(ring_buffer* buffer, int16_t data[3]) {
-  memcpy(buffer->data[buffer->pointer], data, sizeof buffer->data[0]);
-  buffer->pointer = (buffer->pointer + 1) % DATA_BUFFER_LEN;
-}
-
-static void ring_buffer_mean(ring_buffer* buffer, int16_t mean[3]) {
-  for (unsigned int i = 0; i < DATA_BUFFER_LEN; ++i)
-    for (unsigned int j = 0; j < 3; ++j)
-      mean[j] += (buffer->data[i][j] / DATA_BUFFER_LEN);
-}
-
-/* Quaternion Calculation */
-typedef struct {
-  float x;
-  float y;
-  float z;
-} vector;
-
-typedef struct {
-  float w;
-  float x;
-  float y;
-  float z;
-} quaternion;
-
-typedef struct {
-  float roll;
-  float pitch;
-  float yaw;
-} euler;
-
-#define RAD_TO_DEG_FACTOR   (57.295)    // 180 / 3.1459
-#define DEG_TO_RAD_FACTOR   (0.017477)  // 3.1459 / 180
-#define IDENTITY_QUATERNION ((quaternion){.w = 1.0, .x = 0.0, .y = 0.0, .z = 0.0})
-
-static vector vector_add(const vector a, const vector b) {
-  return (vector) {
-    .x = a.x + b.x,
-      .y = a.y + b.y,
-      .z = a.z + b.z
-  };
-}
-
-static vector vector_multiply_scalar(const vector v, const float scalar) {
-  return (vector) {
-    .x = v.x * scalar,
-      .y = v.y * scalar,
-      .z = v.z * scalar
-  };
-}
-
-static vector vector_normalize(const vector v) {
-  const float divisor = sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
-  if (divisor == 0) return v; // TODO: Can we prevent this check somehow?
-
-  const float length = 1.0 / divisor;
-  return vector_multiply_scalar(v, length);
-}
-
-static vector vector_cross_product(const vector a, const vector b) {
-  return (vector) {
-    .x = a.y * b.z - a.z * b.y,
-      .y = a.z * b.x - a.x * b.z,
-      .z = a.x * b.y - a.y * b.x
-  };
-}
-
-static quaternion quaternion_multiply_vector(const quaternion q, const vector v) {
-  return (quaternion) {
-    .w = -q.x * v.x - q.y * v.y - q.z * v.z,
-      .x = q.w * v.x + q.y * v.z - q.z * v.y,
-      .y = q.w * v.y - q.x * v.z + q.z * v.x,
-      .z = q.w * v.z + q.x * v.y - q.y * v.x
-  };
-}
-
-static quaternion quaternion_add(const quaternion a, const quaternion b) {
-  return (quaternion) {
-    .w = a.w + b.w,
-      .x = a.x + b.x,
-      .y = a.y + b.y,
-      .z = a.z + b.z
-  };
-}
-
-static quaternion quaternion_normalize(const quaternion q) {
-  const float length = 1.0 / sqrt(q.w * q.w + q.x * q.x + q.y * q.y + q.z * q.z);
-
-  return (quaternion) {
-    .w = q.w * length,
-      .x = q.x * length,
-      .y = q.y * length,
-      .z = q.z * length
-  };
-}
-
-static float custom_asin(const float value) {
-  if (value <= -1.0) return M_PI / -2.0;
-  if (value >= 1.0) return M_PI / 2.0;
-  return asinf(value);
-}
-
-static euler quaternion_to_euler(const quaternion q) {
-  const float half_y_squared = 0.5 - q.y * q.y;
-  return (euler) {
-    .roll = RAD_TO_DEG_FACTOR * (atan2(q.w * q.x + q.y * q.z, half_y_squared - q.x * q.x)),
-      .pitch = RAD_TO_DEG_FACTOR * (custom_asin(2.0 * (q.w * q.y - q.z * q.x))),
-      .yaw = RAD_TO_DEG_FACTOR * (atan2(q.w * q.z + q.x * q.y, half_y_squared - q.z * q.z))
-  };
-}
-
-#define GYRO_MEASUREMENT_COUNT_250 (131) // 32750 / 250
-#define GYRO_MEASUREMENT_COUNT_500 (65.5) // 32750 / 500
-static vector gyro_to_vector(const int16_t gyro[3], const unsigned int delta_time_ms) {
-  const vector v = {
-      .x = ((float)-gyro[1] / GYRO_MEASUREMENT_COUNT_500) * DEG_TO_RAD_FACTOR,
-      .y = ((float)-gyro[0] / GYRO_MEASUREMENT_COUNT_500) * DEG_TO_RAD_FACTOR,
-      .z = ((float)-gyro[2] / GYRO_MEASUREMENT_COUNT_500) * DEG_TO_RAD_FACTOR
-  };
-
-  const float delta_time_s = (float)delta_time_ms / 1000;
-  return vector_multiply_scalar(v, delta_time_s);
-}
-
-static vector accelerometer_to_vector(
-  const int16_t accelerometer[3],
-  const quaternion previous
-) {
-  const vector half_gravity = {
-    .x = previous.x * previous.z - previous.w * previous.y,
-    .y = previous.y * previous.z + previous.w * previous.x,
-    .z = previous.w * previous.w - 0.5 + previous.z * previous.z,
-  };
-
-  vector v = {
-    .x = accelerometer[1],
-    .y = accelerometer[0],
-    .z = accelerometer[2],
-  };
-
-  return vector_cross_product(vector_normalize(v), half_gravity);
-}
+#include "vmath.h"
+#include "sensor_fusion.h"
 
 /* Main Logic */
 #define SAMPLE_RATE_MS (50)
@@ -196,6 +49,20 @@ static void read_raw_values() {
 int main() {
   watchdog_enable(100, 1);
   stdio_init_all();
+
+  // Clock speed 125 MHz => cycle rate = 8 ns
+  // Wanted cycle rate = 20 ms => 50 Hz = 125 MHz / 2,500,000
+  // Servo min = 1/40 (0.025) * 2,500,000
+  // Servo max = 1/8 (0.125) * 2,500,000
+
+#define MOTOR0_GPIO (13)
+  const uint16_t count_top = 25000;
+  pwm_config cfg = pwm_get_default_config();
+  pwm_config_set_wrap(&cfg, count_top);
+  pwm_config_set_clkdiv(&cfg, 100.0f);
+  pwm_init(pwm_gpio_to_slice_num(MOTOR0_GPIO), &cfg, true);
+  gpio_set_function(MOTOR0_GPIO, GPIO_FUNC_PWM);
+  pwm_set_gpio_level(MOTOR0_GPIO, 0.025f * (count_top + 1));
 
 #if !defined(i2c_default)
   || !defined(PICO_DEFAULT_I2C_SDA_PIN)
@@ -255,10 +122,12 @@ int main() {
       quaternion_add(
         quat,
         quaternion_multiply_vector(quat, feedback))); //feedback
-    printf("graph=inclination;w=%f;x=%f;y=%f;z=%f\n", quat.w, quat.x, quat.y, quat.z);
+    // printf("graph=inclination;w=%f;x=%f;y=%f;z=%f\n", quat.w, quat.x, quat.y, quat.z);
 
     euler angles = quaternion_to_euler(quat);
     printf("graph=Euler Angles;roll=%f;pitch=%f;yaw=%f\n", angles.roll, angles.pitch, angles.yaw);
+
+    pwm_set_gpio_level(MOTOR0_GPIO, (0.025f + angles.roll / 1000.0f) * (count_top + 1));
 
     sleep_ms(SAMPLE_RATE_MS);
   }

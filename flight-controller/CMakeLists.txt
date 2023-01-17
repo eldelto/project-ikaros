@@ -28,6 +28,7 @@ target_link_libraries(flight-controller
   pico_stdlib
   pico_cyw43_arch_none
   hardware_i2c
+  hardware_pwm
   mpu6050
 )
 
