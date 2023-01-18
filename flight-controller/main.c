@@ -1,18 +1,23 @@
 #include <stdio.h>
-#include <string.h>
-#include <math.h>
+
 #include "pico/stdlib.h"
 #include "pico/binary_info.h"
 #include "hardware/i2c.h"
 #include "hardware/pwm.h"
 #include "hardware/watchdog.h"
+
 #include "mpu6050.h"
 #include "vmath.h"
 #include "sensor_fusion.h"
+#include "servo.h"
 
 /* Main Logic */
 #define SAMPLE_RATE_MS (50)
 #define MIX_FACTOR (0.2)
+
+#define MOTOR0_GPIO (13)
+#define MOTOR_ARM   (8000)
+#define MOTOR_IDLE  (9000)
 
 static void handle_error(const int error_value, const char const* error_message) {
   if (error_value >= 0)
@@ -50,19 +55,8 @@ int main() {
   watchdog_enable(100, 1);
   stdio_init_all();
 
-  // Clock speed 125 MHz => cycle rate = 8 ns
-  // Wanted cycle rate = 20 ms => 50 Hz = 125 MHz / 2,500,000
-  // Servo min = 1/40 (0.025) * 2,500,000
-  // Servo max = 1/8 (0.125) * 2,500,000
-
-#define MOTOR0_GPIO (13)
-  const uint16_t count_top = 25000;
-  pwm_config cfg = pwm_get_default_config();
-  pwm_config_set_wrap(&cfg, count_top);
-  pwm_config_set_clkdiv(&cfg, 100.0f);
-  pwm_init(pwm_gpio_to_slice_num(MOTOR0_GPIO), &cfg, true);
-  gpio_set_function(MOTOR0_GPIO, GPIO_FUNC_PWM);
-  pwm_set_gpio_level(MOTOR0_GPIO, 0.025f * (count_top + 1));
+  servo_init(MOTOR0_GPIO);
+  servo_write(MOTOR0_GPIO, MOTOR_ARM);
 
 #if !defined(i2c_default)
   || !defined(PICO_DEFAULT_I2C_SDA_PIN)
@@ -127,7 +121,7 @@ int main() {
     euler angles = quaternion_to_euler(quat);
     printf("graph=Euler Angles;roll=%f;pitch=%f;yaw=%f\n", angles.roll, angles.pitch, angles.yaw);
 
-    pwm_set_gpio_level(MOTOR0_GPIO, (0.025f + angles.roll / 1000.0f) * (count_top + 1));
+    servo_write(MOTOR0_GPIO, angles.roll * 728 + MOTOR_ARM);
 
     sleep_ms(SAMPLE_RATE_MS);
   }
