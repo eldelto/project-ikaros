@@ -15,8 +15,8 @@
 #define SAMPLE_RATE_MS (50)
 #define MIX_FACTOR (0.2)
 
-#define MOTOR0_GPIO (13)
-#define MOTOR_ARM   (8000)
+#define MOTOR0_GPIO (7)
+#define MOTOR_ARM   (9000)
 #define MOTOR_IDLE  (9000)
 
 static void handle_error(const int error_value, const char const* error_message) {

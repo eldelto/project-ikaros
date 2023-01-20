@@ -16,9 +16,9 @@ target_include_directories(flight-controller PRIVATE
 )
 
 target_compile_definitions(flight-controller PRIVATE
-  PICO_DEFAULT_I2C=1
-  PICO_DEFAULT_I2C_SCL_PIN=15
-  PICO_DEFAULT_I2C_SDA_PIN=14
+  PICO_DEFAULT_I2C=0
+  PICO_DEFAULT_I2C_SCL_PIN=13
+  PICO_DEFAULT_I2C_SDA_PIN=12
 )
 
 pico_enable_stdio_usb(flight-controller 1)
