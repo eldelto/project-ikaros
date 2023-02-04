@@ -71,12 +71,22 @@ func main() {
 	space := cp.NewSpace()
 	space.SetGravity(gravity)
 
-	lever := NewDynamicRect(space, 250, 250, 200, 12, rl.NewColor(0, 0, 0, 255))
-	handle := NewKinematicRect(space, 400, 350, 200, 12, rl.NewColor(0, 0, 0, 255))
+	lever := NewDynamicRect(space, 240, 250, 200, 12, rl.NewColor(0, 0, 0, 255))
+	handle := NewKinematicRect(space, 450, 250, 200, 12, rl.NewColor(0, 0, 0, 255))
+	motor := NewDynamicRect(space, 155, 234, 30, 20, rl.NewColor(151, 50, 168, 255))
+
+	pivot := cp.NewPivotJoint(lever.body, handle.body, cp.Vector{X: 350, Y: 250})
+	space.AddConstraint(pivot)
+
+	motorMountA := cp.NewPivotJoint(motor.body, lever.body, cp.Vector{X: 140, Y: 244})
+	space.AddConstraint(motorMountA)
+	motorMountB := cp.NewPivotJoint(motor.body, lever.body, cp.Vector{X: 170, Y: 244})
+	space.AddConstraint(motorMountB)
 
 	objects := []Renderable{}
 	objects = append(objects, lever)
 	objects = append(objects, handle)
+	objects = append(objects, motor)
 
 	lastTime := time.Now()
 	for !rl.WindowShouldClose() {
@@ -89,8 +99,8 @@ func main() {
 		rl.ClearBackground(rl.RayWhite)
 
 		// TODO: Remove slo-mo
-		space.Step(deltaTime.Seconds() / 10.0)
-		// space.Step(deltaTime.Seconds())
+		// space.Step(deltaTime.Seconds() / 10.0)
+		space.Step(deltaTime.Seconds())
 		for _, o := range objects {
 			o.Draw()
 		}
