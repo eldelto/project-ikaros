@@ -21,7 +21,7 @@ void servo_init(const uint gpio) {
   pwm_config_set_clkdiv(&cfg, 100.0f);
   pwm_init(pwm_gpio_to_slice_num(gpio), &cfg, true);
   gpio_set_function(gpio, GPIO_FUNC_PWM);
-  pwm_set_gpio_level(gpio, 0.025f * (COUNT_TOP + 1));
+  pwm_set_gpio_level(gpio, DUTY_MIN * (COUNT_TOP + 1));
 }
 
 void servo_write(const uint gpio, unsigned short value) {

@@ -18,14 +18,14 @@ type Rect struct {
 	body   *cp.Body
 }
 
-func NewDynamicRect(space *cp.Space, x, y, width, height float64, color rl.Color) *Rect {
+func NewDynamicRect(space *cp.Space, x, y, width, height, mass float64, color rl.Color) *Rect {
 	body := space.AddBody(cp.NewBody(0, 0))
 	body.SetPosition(cp.Vector{X: x, Y: y})
 
 	shape := space.AddShape(cp.NewBox(body, width, height, 0))
 	shape.SetElasticity(0)
 	shape.SetFriction(0)
-	shape.SetMass(100)
+	shape.SetMass(mass)
 
 	return &Rect{
 		width:  width,
@@ -60,6 +60,11 @@ func (r *Rect) Draw() {
 	rl.DrawRectanglePro(rectangle, origin, float32(r.body.Angle()*cp.DegreeConst), r.color)
 }
 
+const (
+	maxThrust       float64 = 300000
+	maxThrustChange float64 = maxThrust / 10
+)
+
 var gravity = cp.Vector{X: 0, Y: 9800}
 
 // Distances in mm
@@ -71,16 +76,19 @@ func main() {
 	space := cp.NewSpace()
 	space.SetGravity(gravity)
 
-	lever := NewDynamicRect(space, 240, 250, 200, 12, rl.NewColor(0, 0, 0, 255))
+	lever := NewDynamicRect(space, 240, 250, 200, 12, 30, rl.NewColor(0, 0, 0, 255))
 	handle := NewKinematicRect(space, 450, 250, 200, 12, rl.NewColor(0, 0, 0, 255))
-	motor := NewDynamicRect(space, 155, 234, 30, 20, rl.NewColor(151, 50, 168, 255))
+	motor := NewDynamicRect(space, 155, 234, 30, 20, 8.5, rl.NewColor(151, 50, 168, 255))
 
 	pivot := cp.NewPivotJoint(lever.body, handle.body, cp.Vector{X: 350, Y: 250})
+	pivot.SetErrorBias(0.000001)
 	space.AddConstraint(pivot)
 
 	motorMountA := cp.NewPivotJoint(motor.body, lever.body, cp.Vector{X: 140, Y: 244})
+	motorMountA.SetErrorBias(0)
 	space.AddConstraint(motorMountA)
 	motorMountB := cp.NewPivotJoint(motor.body, lever.body, cp.Vector{X: 170, Y: 244})
+	motorMountB.SetErrorBias(0)
 	space.AddConstraint(motorMountB)
 
 	objects := []Renderable{}
@@ -101,6 +109,9 @@ func main() {
 		// TODO: Remove slo-mo
 		// space.Step(deltaTime.Seconds() / 10.0)
 		space.Step(deltaTime.Seconds())
+
+		forceVector := cp.NewTransformRotate(motor.body.Angle()).Vect(cp.Vector{X: 0, Y: -300000})
+		motor.body.SetForce(forceVector)
 		for _, o := range objects {
 			o.Draw()
 		}
