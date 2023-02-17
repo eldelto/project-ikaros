@@ -134,13 +134,20 @@ func moveSliderWithKey(slider *Slider, key int32) {
 }
 
 type PIDController struct {
-	pGain float64
-	iGain float64
-	dGain float64
+	pGain     float64
+	iGain     float64
+	dGain     float64
+	iError    float64
+	lastError float64
 }
 
 func (c *PIDController) Control(have, want float64) float64 {
-	return (want - have) * c.pGain
+	delta := (want - have)
+	c.iError += (delta * c.iGain)
+	errorChange := delta - c.lastError
+	c.lastError = delta
+
+	return delta*c.pGain + c.iError + errorChange*c.dGain
 }
 
 const (
@@ -149,6 +156,8 @@ const (
 )
 
 var gravity = cp.Vector{X: 0, Y: 9800}
+
+// var gravity = cp.Vector{X: 0, Y: 98}
 
 // Distances in mm
 // Mass in g
@@ -163,9 +172,9 @@ func main() {
 	handle := NewKinematicRect(space, 450, 250, 200, 12, rl.NewColor(0, 0, 0, 255))
 	motor := NewDynamicRect(space, 155, 234, 30, 20, 8.5, rl.NewColor(151, 50, 168, 255))
 
-	sliderP := NewSlider(10, 10, 0, 500, "P")
-	sliderI := NewSlider(10, 45, 0, 500, "I")
-	sliderD := NewSlider(10, 80, 0, 500, "D")
+	sliderP := NewSlider(10, 10, 0, 5000, "P")
+	sliderI := NewSlider(10, 45, 0, 100, "I")
+	sliderD := NewSlider(10, 80, 0, 50000, "D")
 
 	pidController := PIDController{}
 
@@ -203,14 +212,20 @@ func main() {
 		pidController.iGain = sliderI.Value()
 		pidController.dGain = sliderD.Value()
 		thrust := pidController.Control(lever.body.Angle(), 0)
+		thrust = float64(clamp(float32(thrust), 0, 5000))
 		// fmt.Println(thrust)
+		if rl.IsKeyDown(rl.KeyR) {
+			thrust = 0
+			pidController.iError = 0
+		}
+		fmt.Printf("angle=%f thrust=%f\n", lever.body.Angle(), thrust)
 
 		rl.BeginDrawing()
 		rl.ClearBackground(rl.RayWhite)
 
 		space.Step(deltaTime.Seconds())
 
-		forceVector := cp.NewTransformRotate(motor.body.Angle()).Vect(cp.Vector{X: 0, Y: -300 * thrust})
+		forceVector := cp.NewTransformRotate(motor.body.Angle()).Vect(cp.Vector{X: 0, Y: -thrust * 300})
 		motor.body.SetForce(forceVector)
 		for _, o := range objects {
 			o.Draw()
