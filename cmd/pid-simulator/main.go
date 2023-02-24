@@ -122,6 +122,13 @@ func (s *Slider) Value() float64 {
 	return valueRange * float64(percent)
 }
 
+func (s *Slider) SetValue(value float64) {
+	valueRange := s.max - s.min
+	percent := (value - s.min) / valueRange
+
+	s.marker.X = s.line.X + (s.line.Width * float32(percent))
+}
+
 func moveSliderWithKey(slider *Slider, key int32) {
 	if rl.IsKeyDown(key) {
 		if rl.IsKeyDown(rl.KeyEqual) {
@@ -157,7 +164,7 @@ const (
 
 var gravity = cp.Vector{X: 0, Y: 9800}
 
-// var gravity = cp.Vector{X: 0, Y: 98}
+// var gravity = cp.Vector{X: 0, Y: 0.98}
 
 // Distances in mm
 // Mass in g
@@ -175,6 +182,10 @@ func main() {
 	sliderP := NewSlider(10, 10, 0, 5000, "P")
 	sliderI := NewSlider(10, 45, 0, 100, "I")
 	sliderD := NewSlider(10, 80, 0, 50000, "D")
+
+	sliderP.SetValue(1500)
+	sliderI.SetValue(40)
+	sliderD.SetValue(9000)
 
 	pidController := PIDController{}
 
@@ -212,7 +223,7 @@ func main() {
 		pidController.iGain = sliderI.Value()
 		pidController.dGain = sliderD.Value()
 		thrust := pidController.Control(lever.body.Angle(), 0)
-		thrust = float64(clamp(float32(thrust), 0, 5000))
+		thrust = float64(clamp(float32(thrust), -5000, 5000))
 		// fmt.Println(thrust)
 		if rl.IsKeyDown(rl.KeyR) {
 			thrust = 0
