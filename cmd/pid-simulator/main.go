@@ -162,9 +162,9 @@ const (
 	maxThrustChange float64 = maxThrust / 10
 )
 
-var gravity = cp.Vector{X: 0, Y: 9800}
+// var gravity = cp.Vector{X: 0, Y: 9800}
 
-// var gravity = cp.Vector{X: 0, Y: 0.98}
+var gravity = cp.Vector{X: 0, Y: 0.98}
 
 // Distances in mm
 // Mass in g
@@ -179,13 +179,13 @@ func main() {
 	handle := NewKinematicRect(space, 450, 250, 200, 12, rl.NewColor(0, 0, 0, 255))
 	motor := NewDynamicRect(space, 155, 234, 30, 20, 8.5, rl.NewColor(151, 50, 168, 255))
 
-	sliderP := NewSlider(10, 10, 0, 5000, "P")
-	sliderI := NewSlider(10, 45, 0, 100, "I")
-	sliderD := NewSlider(10, 80, 0, 50000, "D")
+	sliderP := NewSlider(10, 10, 0, 1000, "P")
+	sliderI := NewSlider(10, 45, 0, 1, "I")
+	sliderD := NewSlider(10, 80, 0, 10000, "D")
 
-	sliderP.SetValue(1500)
-	sliderI.SetValue(40)
-	sliderD.SetValue(9000)
+	// sliderP.SetValue(1500)
+	// sliderI.SetValue(40)
+	// sliderD.SetValue(9000)
 
 	pidController := PIDController{}
 
@@ -222,7 +222,14 @@ func main() {
 		pidController.pGain = sliderP.Value()
 		pidController.iGain = sliderI.Value()
 		pidController.dGain = sliderD.Value()
-		thrust := pidController.Control(lever.body.Angle(), 0)
+
+		thrust := 0.0
+		if rl.IsKeyDown(rl.KeyS) {
+			thrust = pidController.Control(lever.body.Angle(), -0.45)
+		} else {
+			thrust = pidController.Control(lever.body.Angle(), 0)
+		}
+
 		thrust = float64(clamp(float32(thrust), -5000, 5000))
 		// fmt.Println(thrust)
 		if rl.IsKeyDown(rl.KeyR) {
