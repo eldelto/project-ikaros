@@ -6,9 +6,10 @@ import (
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/jakecoffman/cp"
+	"golang.org/x/exp/constraints"
 )
 
-func clamp(value, min, max float32) float32 {
+func clamp[A constraints.Float](value, min, max A) A {
 	if value < min {
 		return min
 	} else if value > max {
@@ -149,22 +150,22 @@ type PIDController struct {
 }
 
 func (c *PIDController) Control(have, want float64) float64 {
-	delta := (want - have)
-	c.iError += (delta * c.iGain)
-	errorChange := delta - c.lastError
-	c.lastError = delta
+	errorValue := (want - have)
+	c.iError += (errorValue * c.iGain)
+	errorChange := errorValue - c.lastError
+	c.lastError = errorValue
 
-	return delta*c.pGain + c.iError + errorChange*c.dGain
+	return errorValue*c.pGain + c.iError + errorChange*c.dGain
 }
 
 const (
-	maxThrust       float64 = 300000
+	maxThrust       float64 = 1000
 	maxThrustChange float64 = maxThrust / 10
 )
 
 // var gravity = cp.Vector{X: 0, Y: 9800}
 
-var gravity = cp.Vector{X: 0, Y: 0.98}
+var gravity = cp.Vector{X: 0, Y: 9.8}
 
 // Distances in mm
 // Mass in g
@@ -180,7 +181,7 @@ func main() {
 	motor := NewDynamicRect(space, 155, 234, 30, 20, 8.5, rl.NewColor(151, 50, 168, 255))
 
 	sliderP := NewSlider(10, 10, 0, 1000, "P")
-	sliderI := NewSlider(10, 45, 0, 1, "I")
+	sliderI := NewSlider(10, 45, 0, 100, "I")
 	sliderD := NewSlider(10, 80, 0, 10000, "D")
 
 	// sliderP.SetValue(1500)
@@ -210,6 +211,7 @@ func main() {
 	}
 
 	lastTime := time.Now()
+	thrust := 0.0
 	for !rl.WindowShouldClose() {
 		thisTime := time.Now()
 		deltaTime := thisTime.Sub(lastTime)
@@ -223,19 +225,21 @@ func main() {
 		pidController.iGain = sliderI.Value()
 		pidController.dGain = sliderD.Value()
 
-		thrust := 0.0
+		targetThrust := 0.0
 		if rl.IsKeyDown(rl.KeyS) {
-			thrust = pidController.Control(lever.body.Angle(), -0.45)
+			targetThrust = pidController.Control(lever.body.Angle(), -0.45)
 		} else {
-			thrust = pidController.Control(lever.body.Angle(), 0)
+			targetThrust = pidController.Control(lever.body.Angle(), 0)
 		}
 
-		thrust = float64(clamp(float32(thrust), -5000, 5000))
+		targetThrust = clamp(targetThrust, -maxThrust, maxThrust)
 		// fmt.Println(thrust)
 		if rl.IsKeyDown(rl.KeyR) {
-			thrust = 0
+			targetThrust = 0
 			pidController.iError = 0
 		}
+		deltaThrust := clamp(targetThrust-thrust, -maxThrustChange, maxThrustChange)
+		thrust += deltaThrust
 		fmt.Printf("angle=%f thrust=%f\n", lever.body.Angle(), thrust)
 
 		rl.BeginDrawing()
