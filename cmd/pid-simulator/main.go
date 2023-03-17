@@ -2,144 +2,16 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"os"
 	"time"
 
+	"github.com/eldelto/ikaros/internal/optional"
+	"github.com/eldelto/ikaros/internal/rayutil"
+	"github.com/eldelto/ikaros/internal/tower"
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/jakecoffman/cp"
-	"golang.org/x/exp/constraints"
 )
-
-func clamp[A constraints.Float](value, min, max A) A {
-	if value < min {
-		return min
-	} else if value > max {
-		return max
-	} else {
-		return value
-	}
-}
-
-type Renderable interface {
-	Draw()
-}
-
-type Rect struct {
-	width  float64
-	height float64
-	color  rl.Color
-	body   *cp.Body
-}
-
-func NewDynamicRect(space *cp.Space, x, y, width, height, mass float64, color rl.Color) *Rect {
-	body := space.AddBody(cp.NewBody(0, 0))
-	body.SetPosition(cp.Vector{X: x, Y: y})
-
-	shape := space.AddShape(cp.NewBox(body, width, height, 0))
-	shape.SetElasticity(0)
-	shape.SetFriction(0)
-	shape.SetMass(mass)
-
-	return &Rect{
-		width:  width,
-		height: height,
-		body:   body,
-		color:  color,
-	}
-}
-
-// TODO: Merge with constructor above?
-func NewKinematicRect(space *cp.Space, x, y, width, height float64, color rl.Color) *Rect {
-	body := space.AddBody(cp.NewKinematicBody())
-	body.SetPosition(cp.Vector{X: x, Y: y})
-
-	shape := space.AddShape(cp.NewBox(body, width, height, 0))
-	shape.SetElasticity(0)
-	shape.SetFriction(0)
-	shape.SetMass(100)
-
-	return &Rect{
-		width:  width,
-		height: height,
-		body:   body,
-		color:  color,
-	}
-}
-
-func (r *Rect) Draw() {
-	position := r.body.Position()
-	rectangle := rl.NewRectangle(float32(position.X), float32(position.Y), float32(r.width), float32(r.height))
-	origin := rl.Vector2{X: float32(r.width / 2), Y: float32(r.height / 2)}
-	rl.DrawRectanglePro(rectangle, origin, float32(r.body.Angle()*cp.DegreeConst), r.color)
-}
-
-type Slider struct {
-	x      float64
-	y      float64
-	min    float64
-	max    float64
-	text   string
-	line   rl.Rectangle
-	marker rl.Rectangle
-}
-
-func NewSlider(x, y, min, max float64, text string) *Slider {
-	line := rl.NewRectangle(float32(x), float32(y+14), 150, 2)
-	marker := rl.NewRectangle(float32(x), float32(y), 5, 30)
-
-	return &Slider{
-		x:      x,
-		y:      y,
-		min:    min,
-		max:    max,
-		text:   text,
-		line:   line,
-		marker: marker,
-	}
-}
-
-func (s *Slider) Draw() {
-	black := rl.NewColor(0, 0, 0, 155)
-	rl.DrawRectangleRec(s.line, black)
-	rl.DrawRectangleRec(s.marker, black)
-
-	var textSize int32 = 30
-	var textX int32 = int32(s.x + float64(s.line.Width) + 10)
-	var textY int32 = int32(s.y)
-	rl.DrawText(s.text, textX, textY, textSize, black)
-
-	value := s.Value()
-	rl.DrawText(fmt.Sprintf("%f", value), textX+int32(len(s.text))*25, textY, textSize, black)
-}
-
-func (s *Slider) Move(deltaX float32) {
-	markerX := clamp(s.marker.X+deltaX, s.line.X, s.line.X+s.line.Width-s.marker.Width)
-	s.marker.X = markerX
-}
-
-func (s *Slider) Value() float64 {
-	valueRange := s.max - s.min
-	percent := (s.marker.X - s.line.X) / s.line.Width
-
-	return valueRange * float64(percent)
-}
-
-func (s *Slider) SetValue(value float64) {
-	valueRange := s.max - s.min
-	percent := (value - s.min) / valueRange
-
-	s.marker.X = s.line.X + (s.line.Width * float32(percent))
-}
-
-func moveSliderWithKey(slider *Slider, key int32) {
-	if rl.IsKeyDown(key) {
-		if rl.IsKeyDown(rl.KeyEqual) {
-			slider.Move(1)
-		}
-		if rl.IsKeyDown(rl.KeyMinus) {
-			slider.Move(-1)
-		}
-	}
-}
 
 type PIDController struct {
 	pGain     float64
@@ -170,19 +42,33 @@ var gravity = cp.Vector{X: 0, Y: 9.8}
 // Distances in mm
 // Mass in g
 func main() {
+	hostArg := optional.Empty[string]()
+	if len(os.Args) > 1 {
+		hostArg = optional.Of(os.Args[1])
+	}
+	towerHost := hostArg.GetOrElse("localhost:8080")
+
+	towerClient := tower.NewClient(towerHost)
+	if err := towerClient.Connect(); err != nil {
+		log.Println(err)
+		log.Println("Continuing without Tower connection.")
+		towerClient = nil
+	}
+	defer towerClient.Close()
+
 	rl.InitWindow(500, 500, "PID Simulator")
 	rl.SetTargetFPS(60)
 
 	space := cp.NewSpace()
 	space.SetGravity(gravity)
 
-	lever := NewDynamicRect(space, 240, 250, 200, 12, 30, rl.NewColor(0, 0, 0, 255))
-	handle := NewKinematicRect(space, 450, 250, 200, 12, rl.NewColor(0, 0, 0, 255))
-	motor := NewDynamicRect(space, 155, 234, 30, 20, 8.5, rl.NewColor(151, 50, 168, 255))
+	lever := rayutil.NewDynamicRect(space, 240, 250, 200, 12, 30, rl.NewColor(0, 0, 0, 255))
+	handle := rayutil.NewKinematicRect(space, 450, 250, 200, 12, rl.NewColor(0, 0, 0, 255))
+	motor := rayutil.NewDynamicRect(space, 155, 234, 30, 20, 8.5, rl.NewColor(151, 50, 168, 255))
 
-	sliderP := NewSlider(10, 10, 0, 1000, "P")
-	sliderI := NewSlider(10, 45, 0, 100, "I")
-	sliderD := NewSlider(10, 80, 0, 10000, "D")
+	sliderP := rayutil.NewSlider(10, 10, 0, 1000, "P")
+	sliderI := rayutil.NewSlider(10, 45, 0, 100, "I")
+	sliderD := rayutil.NewSlider(10, 80, 0, 10000, "D")
 
 	// sliderP.SetValue(1500)
 	// sliderI.SetValue(40)
@@ -190,18 +76,18 @@ func main() {
 
 	pidController := PIDController{}
 
-	pivot := cp.NewPivotJoint(lever.body, handle.body, cp.Vector{X: 350, Y: 250})
+	pivot := cp.NewPivotJoint(lever.Body, handle.Body, cp.Vector{X: 350, Y: 250})
 	pivot.SetErrorBias(0.000001)
 	space.AddConstraint(pivot)
 
-	motorMountA := cp.NewPivotJoint(motor.body, lever.body, cp.Vector{X: 140, Y: 244})
+	motorMountA := cp.NewPivotJoint(motor.Body, lever.Body, cp.Vector{X: 140, Y: 244})
 	motorMountA.SetErrorBias(0)
 	space.AddConstraint(motorMountA)
-	motorMountB := cp.NewPivotJoint(motor.body, lever.body, cp.Vector{X: 170, Y: 244})
+	motorMountB := cp.NewPivotJoint(motor.Body, lever.Body, cp.Vector{X: 170, Y: 244})
 	motorMountB.SetErrorBias(0)
 	space.AddConstraint(motorMountB)
 
-	objects := []Renderable{
+	objects := []rayutil.Renderable{
 		lever,
 		handle,
 		motor,
@@ -217,38 +103,51 @@ func main() {
 		deltaTime := thisTime.Sub(lastTime)
 		lastTime = thisTime
 
-		moveSliderWithKey(sliderP, rl.KeyP)
-		moveSliderWithKey(sliderI, rl.KeyI)
-		moveSliderWithKey(sliderD, rl.KeyD)
+		rayutil.MoveSliderWithKey(sliderP, rl.KeyP)
+		rayutil.MoveSliderWithKey(sliderI, rl.KeyI)
+		rayutil.MoveSliderWithKey(sliderD, rl.KeyD)
 
 		pidController.pGain = sliderP.Value()
 		pidController.iGain = sliderI.Value()
 		pidController.dGain = sliderD.Value()
 
 		targetThrust := 0.0
+		setPoint := 0.0
 		if rl.IsKeyDown(rl.KeyS) {
-			targetThrust = pidController.Control(lever.body.Angle(), -0.45)
-		} else {
-			targetThrust = pidController.Control(lever.body.Angle(), 0)
+			setPoint = -0.45
 		}
 
-		targetThrust = clamp(targetThrust, -maxThrust, maxThrust)
+		targetThrust = pidController.Control(lever.Body.Angle(), setPoint)
+		targetThrust = rayutil.Clamp(targetThrust, -maxThrust, maxThrust)
 		// fmt.Println(thrust)
 		if rl.IsKeyDown(rl.KeyR) {
 			targetThrust = 0
 			pidController.iError = 0
 		}
-		deltaThrust := clamp(targetThrust-thrust, -maxThrustChange, maxThrustChange)
+		deltaThrust := rayutil.Clamp(targetThrust-thrust, -maxThrustChange, maxThrustChange)
 		thrust += deltaThrust
-		fmt.Printf("angle=%f thrust=%f\n", lever.body.Angle(), thrust)
+		fmt.Printf("angle=%f thrust=%f\n", lever.Body.Angle(), thrust)
+
+		data := map[string]any{
+			"graph":     "PID",
+			"setPoint":  setPoint,
+			"angle":     lever.Body.Angle(),
+			"timestamp": time.Now(),
+		}
+
+		if towerClient != nil {
+			if err := towerClient.Send(data); err != nil {
+				log.Fatalf("Failed to write to tower: %s", err)
+			}
+		}
 
 		rl.BeginDrawing()
 		rl.ClearBackground(rl.RayWhite)
 
 		space.Step(deltaTime.Seconds())
 
-		forceVector := cp.NewTransformRotate(motor.body.Angle()).Vect(cp.Vector{X: 0, Y: -thrust * 300})
-		motor.body.SetForce(forceVector)
+		forceVector := cp.NewTransformRotate(motor.Body.Angle()).Vect(cp.Vector{X: 0, Y: -thrust * 300})
+		motor.Body.SetForce(forceVector)
 		for _, o := range objects {
 			o.Draw()
 		}

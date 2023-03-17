@@ -45,7 +45,7 @@ func (c *Client) Connect() error {
 }
 
 func (c *Client) Close() error {
-	if c.conn == nil {
+	if c == nil || c.conn == nil {
 		return nil
 	}
 
