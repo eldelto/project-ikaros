@@ -7,6 +7,7 @@ bin/generator \
 bin/serial-relay \
 bin/serial-monitor \
 bin/pid-simulator \
+bin/pid-control \
 bin/flight-controller.uf2
 
 .PHONY: init
@@ -88,5 +89,8 @@ bin/serial-monitor: .FORCE
 
 bin/pid-simulator: .FORCE
 	go build -o bin/pid-simulator cmd/pid-simulator/main.go
+
+bin/pid-control: .FORCE
+	go build -o bin/pid-control cmd/pid-control/main.go
 
 .FORCE:
