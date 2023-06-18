@@ -1,60 +1,35 @@
 .DELETE_ON_ERROR:
 
+# Use GCC as compiler.
+CC := gcc
+WEB_CC := emcc
+
+# Set additional compiler flags.
+# TODO: Enable stricter error checking again after figuring out how to compile
+#       raylib in a more lenient way.
+# CFLAGS  := -Wall -Werror -Wextra -pedantic-errors -std=c17 -MMD -MP
+CFLAGS  := -Wall -Wextra -std=c17 -MMD -MP
+LDFLAGS += -Ldeps/raylib/src -lraylib
+
+CFLAGS += -Ideps/raylib/src -Ideps/raygui/src
+CFLAGS += -framework CoreVideo -framework IOKit -framework Cocoa -framework GLUT -framework OpenGL
+
 # High-level commands
 .PHONY: build
-build: bin/tower \
-bin/generator \
-bin/serial-relay \
-bin/serial-monitor \
-bin/pid-simulator \
+build: deps \
+bin/tower \
 bin/flight-controller.uf2
-
-.PHONY: init
-init: download
-	cat tools.go | grep _ | awk -F'"' '{print $$2}' | xargs -tI % go install %
-
-.PHONY: download
-download:
-	go mod download
-	npm install --prefix analyzer-web/
-
-.PHONY: run
-run: build
-	echo Starting Tower ...
-	bin/tower
-
-.PHONY: run-loop
-run-loop:
-	reflex -r "\.(go|html|css|js)$$" -R ".*node_modules.*" -s make run
-
-.PHONY: test
-test: lint
-	echo Testing ...
-	go test ./...
-
-.PHONY: lint
-lint:
-	go mod tidy
-	go fmt ./...
-	staticcheck ./...
-
-.PHONY: test-loop
-test-loop:
-	echo Waiting for file changes ...
-	reflex -r "\.(go|html|css|js)$$" -R ".*node_modules.*" make test
 
 .PHONY: clean
 clean:
-	rm -f bin/*
+	rm -rf bin/*
+	find . -name '*.o' | xargs rm
+	find . -name '*.d' | xargs rm
 	rm -rf flight-controller/build
 
 # Tower
-bin/tower: .FORCE internal/tower/api/assets/index.js $(wildcard tower/api/assets/*.css) $(wildcard tower/api/assets/*.html)
-	go build -o bin/tower cmd/tower/main.go
-
-internal/tower/api/assets/index.js: $(wildcard analyzer-web/*.js)
-	analyzer-web/node_modules/.bin/esbuild analyzer-web/index.js \
-		--bundle --minify --outfile=internal/tower/api/assets/index.js
+bin/tower: tower/tower.c
+	$(CC) $(CFLAGS) $^ -o $@ $(CFLAGS) $(LDFLAGS)
 
 # Flight-Controller
 export PICO_SDK_PATH=../../../pico/pico-sdk
@@ -76,17 +51,17 @@ bin/flight-controller.uf2: flight-controller/build/Makefile $(wildcard flight-co
 flash-pico: bin/flight-controller.uf2
 	picotool load -f bin/flight-controller.uf2
 
-# Utility programs
-bin/generator: .FORCE
-	go build -o bin/generator cmd/generator/main.go
+# Deps
+deps: deps/raylib/src/libraylib.a
 
-bin/serial-relay: .FORCE
-	go build -o bin/serial-relay cmd/serial-relay/main.go
+.PHONY: deps-clean
+deps-clean:
+	find deps -name '*.o' | xargs rm
+	find deps -name '*.d' | xargs rm
+	rm -rf deps/raylib/src/libraylib.a
 
-bin/serial-monitor: .FORCE
-	go build -o bin/serial-monitor cmd/serial-monitor/main.go
+deps/raylib/src/libraylib.a:
+	cd deps/raylib/src && \
+	$(MAKE) PLATFORM=PLATFORM_DESKTOP
 
-bin/pid-simulator: .FORCE
-	go build -o bin/pid-simulator cmd/pid-simulator/main.go
-
-.FORCE:
+-include *.d
