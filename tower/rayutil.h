@@ -35,7 +35,7 @@ struct sim_data_set {
   Color color;
 };
 
-struct sim_data_set sim_new_data_set(unsigned int length, char* name, Color color) {
+static struct sim_data_set sim_new_data_set(unsigned int length, char* name, Color color) {
   double* data = calloc(length, sizeof(double));
 
   return (struct sim_data_set) {
@@ -47,7 +47,7 @@ struct sim_data_set sim_new_data_set(unsigned int length, char* name, Color colo
   };
 }
 
-void sim_free_data_set(struct sim_data_set* ds) {
+static void sim_free_data_set(struct sim_data_set* ds) {
   free(ds->data);
   ds->data = NULL;
 }
@@ -73,7 +73,7 @@ struct sim_graph {
 struct sim_graph sim_new_graph(const Rectangle rect) {
   return (struct sim_graph) {
     .rect = rect,
-    .data_sets = {},
+    .data_sets = {0},
     .data_sets_len = 0,
   };
 }
