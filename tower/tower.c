@@ -1,13 +1,54 @@
 #include <stdlib.h>
 #include <stdbool.h>
+#include <dirent.h>
+#include <sys/errno.h>
 
 #include <raylib.h>
 #define RAYGUI_IMPLEMENTATION
 #include <raygui.h>
 
 #include "rayutil.h"
+#include "edutil.h"
+
+// TODO:
+// read from the selected device
+// write to the selected device
+
+char pico_tty[100];
+void find_pico_tty(void) {
+  const char *tty_prefix = "tty.usb";
+  bool found = false;
+  
+  DIR *dev = opendir("/dev");
+  if (dev == NULL) fatal_error("failed to open /dev");
+
+  struct dirent *entry = NULL;
+  while ((entry = readdir(dev))) {
+    // Skip everything except files.
+    if (entry->d_type != DT_CHR) continue;
+    
+    // Check if it could be the pico tty by prefix.
+    if (strncmp(entry->d_name, tty_prefix, strlen(tty_prefix)) == 0) {
+      if (found) {
+	error("failed to find unique pico tty");
+	goto close_dir;
+      }
+      strlcpy(pico_tty, entry->d_name, sizeof(pico_tty));
+      found = true;
+    }
+  }
+
+  if (!found) error("failed to find pico tty");
+
+close_dir:
+  closedir(dev);
+
+  if (error_msg[0] != '\0') panic();
+}
 
 int main(void) {
+  find_pico_tty();
+
   const int screen_width = 1200;
   const int screen_height = 800;
 

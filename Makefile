@@ -2,7 +2,6 @@
 
 # Use GCC as compiler.
 CC := gcc
-WEB_CC := emcc
 
 # Set additional compiler flags.
 # TODO: Enable stricter error checking again after figuring out how to compile
@@ -12,7 +11,7 @@ CFLAGS  := -Wall -Werror -Wextra -pedantic-errors \
         -Wno-unused-function \
         -Wno-unused-variable \
         -Wno-newline-eof \
-				-Wno-unused-but-set-variable \
+        -Wno-unused-but-set-variable \
         -Wno-sign-compare \
         -std=c17 -MMD -MP
 
@@ -36,7 +35,7 @@ clean:
 
 # Tower
 bin/tower: tower/tower.c
-	$(CC) $(CFLAGS) $^ -o $@ $(CFLAGS) $(LDFLAGS)
+	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 # Flight-Controller
 export PICO_SDK_PATH=../../../pico/pico-sdk
@@ -71,4 +70,5 @@ deps/raylib/src/libraylib.a:
 	cd deps/raylib/src && \
 	$(MAKE) PLATFORM=PLATFORM_DESKTOP
 
--include *.d
+HEADER_DEPS := $(shell find . -name '*.d')
+#-include $(HEADER_DEPS)
