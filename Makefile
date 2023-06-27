@@ -18,7 +18,7 @@ CFLAGS  := -Wall -Werror -Wextra -pedantic-errors \
 LDFLAGS += -Ldeps/raylib/src -lraylib
 
 CFLAGS += -Ideps/raylib/src -Ideps/raygui/src
-CFLAGS += -framework CoreVideo -framework IOKit -framework Cocoa -framework GLUT -framework OpenGL
+LDFLAGS += -framework CoreVideo -framework IOKit -framework Cocoa -framework GLUT -framework OpenGL
 
 # High-level commands
 .PHONY: build
@@ -34,7 +34,7 @@ clean:
 	rm -rf flight-controller/build
 
 # Tower
-bin/tower: tower/tower.c
+bin/tower: tower/tower.o
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 # Flight-Controller
@@ -71,4 +71,4 @@ deps/raylib/src/libraylib.a:
 	$(MAKE) PLATFORM=PLATFORM_DESKTOP
 
 HEADER_DEPS := $(shell find . -name '*.d')
-#-include $(HEADER_DEPS)
+-include $(HEADER_DEPS)

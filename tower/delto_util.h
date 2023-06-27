@@ -1,5 +1,5 @@
-#ifndef EDUTIL
-#define EDUTIL
+#ifndef DELTO_UTIL
+#define DELTO_UTIL
 
 #include <stdlib.h>
 #include <string.h>
@@ -20,6 +20,10 @@ void panic(void) {
 void fatal_error(char msg[100]) {
   error(msg);
   panic();
+}
+
+void panic_on_error(void) {
+  if (error_msg[0] != '\0') panic();
 }
 
 #endif

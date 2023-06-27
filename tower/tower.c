@@ -1,25 +1,29 @@
-#include <stdlib.h>
-#include <stdbool.h>
 #include <dirent.h>
+#include <fcntl.h>
+#include <stdbool.h>
+#include <stdlib.h>
 #include <sys/errno.h>
+#include<termios.h>
+#include <unistd.h>
 
 #include <raylib.h>
 #define RAYGUI_IMPLEMENTATION
 #include <raygui.h>
 
 #include "rayutil.h"
-#include "edutil.h"
+#include "delto_util.h"
 
 // TODO:
 // read from the selected device
 // write to the selected device
 
-char pico_tty[100];
+const char tty_dir[] = "/dev";
+char pico_tty[100] = "";
 void find_pico_tty(void) {
   const char *tty_prefix = "tty.usb";
   bool found = false;
   
-  DIR *dev = opendir("/dev");
+  DIR *dev = opendir(tty_dir);
   if (dev == NULL) fatal_error("failed to open /dev");
 
   struct dirent *entry = NULL;
@@ -33,7 +37,10 @@ void find_pico_tty(void) {
 	error("failed to find unique pico tty");
 	goto close_dir;
       }
-      strlcpy(pico_tty, entry->d_name, sizeof(pico_tty));
+
+      strlcat(pico_tty, tty_dir, sizeof(pico_tty));
+      strlcat(pico_tty, "/", sizeof(pico_tty));
+      strlcat(pico_tty, entry->d_name, sizeof(pico_tty));
       found = true;
     }
   }
@@ -47,8 +54,6 @@ close_dir:
 }
 
 int main(void) {
-  find_pico_tty();
-
   const int screen_width = 1200;
   const int screen_height = 800;
 
@@ -96,8 +101,48 @@ int main(void) {
   const double set_point_1 = screen_height/2;
   const double set_point_2 = screen_height/4;
 
+  find_pico_tty();
+  printf("Connecting to tty '%s' ...\n", pico_tty);
+  int pico_fd = open(pico_tty, O_RDWR | O_NOCTTY | O_NDELAY);
+  if (pico_fd == -1) fatal_error("failed to open pico tty");
+  if (fcntl(pico_fd, F_SETFL, FNDELAY) == -1) {
+    error("failed to set tty flags");
+    close(pico_fd);
+    goto raylib_teardown;
+  }
+
+  struct termios tty;
+  cfsetospeed(&tty, B115200);
+            cfsetispeed(&tty, B9600);
+
+            tty.c_cflag &= ~PARENB;
+            tty.c_cflag &= ~CSTOPB;
+            tty.c_cflag &= ~CSIZE;
+            tty.c_cflag |= CS8;
+            tty.c_cflag &= ~CRTSCTS; 
+            tty.c_cflag |= CLOCAL | CREAD;
+
+            tty.c_iflag |= IGNPAR | IGNCR;
+            tty.c_iflag &= ~(IXON | IXOFF | IXANY);
+            tty.c_lflag |= ICANON;
+            tty.c_oflag &= ~OPOST;
+            tcsetattr(pico_fd, TCSANOW, &tty);
+	    
+  FILE *pico = fdopen(pico_fd, "r+t");
+  if (pico == NULL) {
+    error("failed to convert file descriptor to FILE");
+    close(pico_fd);
+    goto raylib_teardown;
+  }
+
   double x = 0;
+#define TTY_MSG_MAX 100
+  char pico_in[TTY_MSG_MAX];
   while (!WindowShouldClose()) {
+    if (fgets(pico_in, TTY_MSG_MAX, pico) != NULL) {
+      puts(pico_in);
+    }
+
     const double set_point = second_set_point ? set_point_2 : set_point_1;
 
     x += 0.05;
@@ -124,9 +169,15 @@ int main(void) {
     EndDrawing();
   }
 
+  // pico_close:
+  fclose(pico);
+
+ raylib_teardown:
   CloseWindow();
   sim_free_graph(&sine_graph);
   sim_free_graph(&cosine_graph);
+
+  panic_on_error();
 
   return EXIT_SUCCESS;
 }
