@@ -1,7 +1,7 @@
 .DELETE_ON_ERROR:
 
-# Use GCC as compiler.
-CC := gcc
+# Set default compiler
+CC := clang
 
 # Set additional compiler flags.
 # TODO: Enable stricter error checking again after figuring out how to compile
@@ -17,7 +17,7 @@ CFLAGS  := -Wall -Werror -Wextra -pedantic-errors \
 
 LDFLAGS += -Ldeps/raylib/src -lraylib
 
-CFLAGS += -Ideps/raylib/src -Ideps/raygui/src
+CFLAGS += -Iincludes -Ideps/raylib/src -Ideps/raygui/src
 LDFLAGS += -framework CoreVideo -framework IOKit -framework Cocoa -framework GLUT -framework OpenGL
 
 # High-level commands

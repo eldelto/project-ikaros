@@ -3,18 +3,19 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <sys/errno.h>
-#include<termios.h>
+#include <termios.h>
 #include <unistd.h>
 
-#include <raylib.h>
+#include "raylib.h"
 #define RAYGUI_IMPLEMENTATION
-#include <raygui.h>
+#include "raygui.h"
 
-#include "rayutil.h"
-#include "delto_util.h"
+#include "delto/rayutil.h"
+#include "delto/serial.h"
+#include "delto/util.h"
 
 // TODO:
-// read from the selected device
+// Parse string and generate graphs
 // write to the selected device
 
 const char tty_dir[] = "/dev";
@@ -28,7 +29,7 @@ void find_pico_tty(void) {
 
   struct dirent *entry = NULL;
   while ((entry = readdir(dev))) {
-    // Skip everything except files.
+    // Skip everything except character devices.
     if (entry->d_type != DT_CHR) continue;
     
     // Check if it could be the pico tty by prefix.
@@ -50,7 +51,7 @@ void find_pico_tty(void) {
 close_dir:
   closedir(dev);
 
-  if (error_msg[0] != '\0') panic();
+  panic_on_error();
 }
 
 int main(void) {
@@ -74,10 +75,10 @@ int main(void) {
     .height = screen_height - ( 2 * PADDING),
   };
 
-  const Rectangle p_gain_slider = sim_build_slider(control_group, 0);
-  const Rectangle i_gain_slider = sim_build_slider(control_group, 1);
-  const Rectangle d_gain_slider = sim_build_slider(control_group, 2);
-  const Rectangle set_point_button = sim_build_button(control_group, 3);
+  const Rectangle p_gain_slider = grouped_slider(control_group, 0);
+  const Rectangle i_gain_slider = grouped_slider(control_group, 1);
+  const Rectangle d_gain_slider = grouped_slider(control_group, 2);
+  const Rectangle set_point_button = grouped_button(control_group, 3);
 
   const Rectangle graph_rect = {
     .x = PADDING,
@@ -85,10 +86,10 @@ int main(void) {
     .width = screen_width - (screen_width - control_group.x) - (2 * PADDING),
     .height = screen_height - (tab_bar.y + tab_bar.height + 2 * PADDING),
   };
-  struct sim_graph sine_graph = sim_new_graph(graph_rect);
-  struct sim_graph cosine_graph = sim_new_graph(graph_rect);
-  struct sim_data_set *sine = sim_add_data_set(&sine_graph, "Sine", BLUE);
-  struct sim_data_set *cosine = sim_add_data_set(&cosine_graph, "Cosine", RED);
+  struct graph sine_graph = graph_new(graph_rect, "Sine");
+  struct graph cosine_graph = graph_new(graph_rect, "Cosine");
+  struct graph_data_set *sine = graph_add_data_set(&sine_graph, "Sine", BLUE);
+  struct graph_data_set *cosine = graph_add_data_set(&cosine_graph, "Cosine", RED);
 
   InitWindow(screen_width, screen_height, "Tower");
   SetTargetFPS(60);
@@ -103,60 +104,38 @@ int main(void) {
 
   find_pico_tty();
   printf("Connecting to tty '%s' ...\n", pico_tty);
-  int pico_fd = open(pico_tty, O_RDWR | O_NOCTTY | O_NDELAY);
-  if (pico_fd == -1) fatal_error("failed to open pico tty");
-  if (fcntl(pico_fd, F_SETFL, FNDELAY) == -1) {
-    error("failed to set tty flags");
-    close(pico_fd);
-    goto raylib_teardown;
-  }
-
-  struct termios tty;
-  cfsetospeed(&tty, B115200);
-            cfsetispeed(&tty, B9600);
-
-            tty.c_cflag &= ~PARENB;
-            tty.c_cflag &= ~CSTOPB;
-            tty.c_cflag &= ~CSIZE;
-            tty.c_cflag |= CS8;
-            tty.c_cflag &= ~CRTSCTS; 
-            tty.c_cflag |= CLOCAL | CREAD;
-
-            tty.c_iflag |= IGNPAR | IGNCR;
-            tty.c_iflag &= ~(IXON | IXOFF | IXANY);
-            tty.c_lflag |= ICANON;
-            tty.c_oflag &= ~OPOST;
-            tcsetattr(pico_fd, TCSANOW, &tty);
-	    
-  FILE *pico = fdopen(pico_fd, "r+t");
-  if (pico == NULL) {
-    error("failed to convert file descriptor to FILE");
-    close(pico_fd);
-    goto raylib_teardown;
-  }
+  FILE *pico = openserial(pico_tty);
+  if (pico == NULL) goto raylib_teardown; 
 
   double x = 0;
 #define TTY_MSG_MAX 100
   char pico_in[TTY_MSG_MAX];
+
   while (!WindowShouldClose()) {
     if (fgets(pico_in, TTY_MSG_MAX, pico) != NULL) {
-      puts(pico_in);
+      char *token = "";
+      char *source = &pico_in[0];
+      puts(source);
+      while ((token = strsep(&source, ";")) != NULL)
+                   printf("%s\n", token);
+    } else {
+      perror("failed to read pico_in");
     }
 
     const double set_point = second_set_point ? set_point_2 : set_point_1;
 
     x += 0.05;
     if (x >= PI) x = -PI;
-    sim_push_data_point(sine, sin(x) * 100);
-    sim_push_data_point(cosine, cos(x) * 100);
+    graph_data_set_push(sine, sin(x) * 100);
+    graph_data_set_push(cosine, cos(x) * 100);
 
     BeginDrawing();
     ClearBackground(WHITE);
 
     GuiTabBar(tab_bar, tabs, 2, &active_tab);
     
-    if (active_tab == 0) sim_draw_graph(&sine_graph);
-    else sim_draw_graph(&cosine_graph);
+    if (active_tab == 0) graph_draw(&sine_graph);
+    else graph_draw(&cosine_graph);
 
     GuiGroupBox(control_group, "Controller Gains");
     p_gain = GuiSliderBar(p_gain_slider, "P", TextFormat("%.2f", p_gain), p_gain, 0, 1);
@@ -174,8 +153,8 @@ int main(void) {
 
  raylib_teardown:
   CloseWindow();
-  sim_free_graph(&sine_graph);
-  sim_free_graph(&cosine_graph);
+  graph_free(&sine_graph);
+  graph_free(&cosine_graph);
 
   panic_on_error();
 

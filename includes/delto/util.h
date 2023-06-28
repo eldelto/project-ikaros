@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* Error handling */
 char error_msg[100] = "";
 static int error(char msg[100]) {
   memcpy(error_msg, msg, sizeof(error_msg));
@@ -24,6 +25,14 @@ void fatal_error(char msg[100]) {
 
 void panic_on_error(void) {
   if (error_msg[0] != '\0') panic();
+}
+
+
+/* Random utility functions */
+double clamp_value(double value, double min, double max) {
+  if (value < min) return min;
+  else if (value > max) return max;
+  else return value;
 }
 
 #endif
