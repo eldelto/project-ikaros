@@ -1,5 +1,6 @@
 *.d
 *.o
+*.orig
 bin/
 node_modules/
 build/
