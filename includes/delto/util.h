@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 /* Error handling */
 char error_msg[100] = "";
@@ -27,6 +28,10 @@ void panic_on_error(void) {
     if (error_msg[0] != '\0') panic();
 }
 
+/* String functions */
+bool string_equals(char *a, char *b) {
+  return strncmp(a, b, 20) == 0;
+}
 
 /* Random utility functions */
 double clamp_value(double value, double min, double max) {

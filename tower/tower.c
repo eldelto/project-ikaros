@@ -14,6 +14,8 @@
 #include "delto/serial.h"
 #include "delto/util.h"
 
+#define TTY_MSG_MAX 100
+
 // TODO:
 // Parse string and generate graphs
 // write to the selected device
@@ -54,6 +56,33 @@ close_dir:
     panic_on_error();
 }
 
+struct data_point {
+  char name[GRAPH_NAME_MAX];
+  double value;
+};
+
+static unsigned int parse_graph_message(char message[TTY_MSG_MAX], struct data_point data_points[DATA_SETS_MAX]) {
+  char *token = "";
+  unsigned int i = 0;
+  
+  while ((token = strsep(&message, ";")) != NULL) {
+    char *key = strsep(&token, "=");
+    char *value = strsep(&token, "=");
+    if (key == NULL || value == NULL || string_equals(key, "graph")) continue;
+
+    struct data_point dp = {
+      .name = "",
+      .value = strtod(value, NULL)
+    };
+    strlcpy(dp.name, key, sizeof(dp.name) - 1);
+    data_points[i++] = dp;
+
+    if (i >= DATA_SETS_MAX) break;
+  }
+
+  return i;
+}
+
 int main(void) {
     const int screen_width = 1200;
     const int screen_height = 800;
@@ -78,7 +107,6 @@ int main(void) {
     const Rectangle p_gain_slider = grouped_slider(control_group, 0);
     const Rectangle i_gain_slider = grouped_slider(control_group, 1);
     const Rectangle d_gain_slider = grouped_slider(control_group, 2);
-    const Rectangle set_point_button = grouped_button(control_group, 3);
 
     const Rectangle graph_rect = {
         .x = PADDING,
@@ -88,7 +116,6 @@ int main(void) {
     };
     struct graph sine_graph = graph_new(graph_rect, "Sine");
     struct graph cosine_graph = graph_new(graph_rect, "Cosine");
-    struct graph_data_set *sine = graph_add_data_set(&sine_graph, "Sine", BLUE);
     struct graph_data_set *cosine = graph_add_data_set(&cosine_graph, "Cosine", RED);
 
     InitWindow(screen_width, screen_height, "Tower");
@@ -107,23 +134,15 @@ int main(void) {
     FILE *pico = openserial(pico_tty);
     if (pico == NULL) goto raylib_teardown;
 
-    double x = 0;
-#define TTY_MSG_MAX 100
     char pico_in[TTY_MSG_MAX];
-
     while (!WindowShouldClose()) {
         if (fgets(pico_in, TTY_MSG_MAX, pico) != NULL) {
-            char *token = "";
-            char *source = &pico_in[0];
-            //puts(source);
-            while ((token = strsep(&source, ";")) != NULL) {
-	      //printf("%s\n", token);
-		char *key = strsep(&token, "=");
-		char *value = strsep(&token, "=");
-		if (key == NULL || value == NULL) continue;
-		
-		graph_push_or_add(&sine_graph, key, strtod(value, NULL) * 2);
-	    }
+	  struct data_point data_points[DATA_SETS_MAX];
+	  unsigned int len = parse_graph_message(pico_in, data_points);
+	  for(; len > 0; --len) {
+	    struct data_point dp = data_points[len - 1];
+	    graph_push_or_add(&sine_graph, dp.name, dp.value * 2);
+	  }
             /*
             - Have a global list of graphs
             - Split the incoming message by ';'
@@ -138,13 +157,6 @@ int main(void) {
           //  perror("failed to read pico_in");
         }
 
-        const double set_point = second_set_point ? set_point_2 : set_point_1;
-
-        x += 0.05;
-        if (x >= PI) x = -PI;
-        //graph_data_set_push(sine, sin(x) * 100);
-        graph_data_set_push(cosine, cos(x) * 100);
-
         BeginDrawing();
         ClearBackground(WHITE);
 
@@ -157,9 +169,6 @@ int main(void) {
         p_gain = GuiSliderBar(p_gain_slider, "P", TextFormat("%.2f", p_gain), p_gain, 0, 1);
         i_gain = GuiSliderBar(i_gain_slider, "I", TextFormat("%.2f", i_gain), i_gain, 0, 1);
         d_gain = GuiSliderBar(d_gain_slider, "D", TextFormat("%.2f", d_gain), d_gain, 0, 1);
-        if (GuiButton(set_point_button, "Change setpoint")) {
-            second_set_point = !second_set_point;
-        }
 
         EndDrawing();
     }
