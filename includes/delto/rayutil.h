@@ -138,6 +138,7 @@ struct graph_data_set * graph_push_or_add(struct graph *g, char *name, double va
   return data_set;
 }
 
+#define GRAPH_LINE_WIDTH 1.5
 void graph_draw(const struct graph* const lg) {
   const int x = lg->rect.x;
   const int y = lg->rect.y;
@@ -150,14 +151,14 @@ void graph_draw(const struct graph* const lg) {
   for (unsigned int j = 0; j < lg->data_sets_len; ++j) {
     const struct graph_data_set data_set = lg->data_sets[j];
 
-    DrawLine(x + PADDING, y + 5 + (PADDING * j), x + PADDING + 10, y + 5 + (PADDING * j), data_set.color);
+    DrawLineEx((Vector2) {x + PADDING, y + 5 + (PADDING * j)}, (Vector2) {x + PADDING + 10, y + 5 + (PADDING * j)}, GRAPH_LINE_WIDTH, data_set.color);
     DrawText(data_set.name, x + PADDING + 20, y + (PADDING * j), 10, BLACK);
 
     for(unsigned int i = 1; i < data_set.data_len; ++i) {
       const int x_line = x + i;
       const int y_previous = y_mid - graph_data_set_get(&data_set, i - 1);
       const int y = y_mid - graph_data_set_get(&data_set, i);
-      DrawLineEx((Vector2){x_line-1, y_previous}, (Vector2){x_line, y}, 1.5, data_set.color);
+      DrawLineEx((Vector2) {x_line-1, y_previous}, (Vector2) {x_line, y}, GRAPH_LINE_WIDTH, data_set.color);
     }
   }
 }
