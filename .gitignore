@@ -1,6 +1,7 @@
 *.d
 *.o
 *.orig
+.DS_STORE
 bin/
 node_modules/
 build/

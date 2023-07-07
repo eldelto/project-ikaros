@@ -6,7 +6,8 @@
 #include <stdbool.h>
 
 /* Error handling */
-char error_msg[100] = "";
+static char error_msg[100] = "";
+
 static int error(char msg[100]) {
     memcpy(error_msg, msg, sizeof(error_msg));
     return -1;

@@ -15,13 +15,11 @@
 #include "delto/util.h"
 
 #define TTY_MSG_MAX 100
+#define GRAPHS_MAX 5
 
-// TODO:
-// Parse string and generate graphs
-// write to the selected device
+static const char tty_dir[] = "/dev";
+static char pico_tty[100] = "";
 
-const char tty_dir[] = "/dev";
-char pico_tty[100] = "";
 void find_pico_tty(void) {
     const char tty_prefix[] = "tty.usb";
     bool found = false;
@@ -56,33 +54,74 @@ close_dir:
     panic_on_error();
 }
 
+static struct graph graphs[GRAPHS_MAX];
+static unsigned int graphs_len = 0;
+
+static struct graph *add_graph(Rectangle rect, char name[GRAPH_NAME_MAX]) {
+  for(unsigned int i = 0; i < graphs_len; ++i) {
+    struct graph *g = &graphs[i];
+    if (string_equals(g->name, name)) return g;
+  }
+  
+  struct graph g = graph_new(rect, name);
+  graphs[graphs_len++] = g;
+
+  return &graphs[graphs_len - 1];
+}
+
+static void free_graphs(void) {
+  for (unsigned int i = graphs_len; i < graphs_len; ++i)
+    graph_free(&graphs[i]);
+}
+
 struct data_point {
   char name[GRAPH_NAME_MAX];
   double value;
 };
 
-static unsigned int parse_graph_message(char message[TTY_MSG_MAX], struct data_point data_points[DATA_SETS_MAX]) {
+static void parse_graph_message(char message[TTY_MSG_MAX], Rectangle graph_rect) {
   char *token = "";
-  unsigned int i = 0;
-  
+  struct graph *graph = NULL;
+  struct data_point data_points[DATA_SETS_MAX];
+  unsigned int data_points_len = 0;
+
   while ((token = strsep(&message, ";")) != NULL) {
     char *key = strsep(&token, "=");
     char *value = strsep(&token, "=");
-    if (key == NULL || value == NULL || string_equals(key, "graph")) continue;
+    if (key == NULL || value == NULL) continue;
 
-    struct data_point dp = {
-      .name = "",
-      .value = strtod(value, NULL)
-    };
-    strlcpy(dp.name, key, sizeof(dp.name) - 1);
-    data_points[i++] = dp;
+    if (string_equals(key, "graph")) {
+      graph = add_graph(graph_rect, value);
+    } else {
+      struct data_point dp = {
+	.name = "",
+	.value = strtod(value, NULL)
+      };
+      strlcpy(dp.name, key, sizeof(dp.name) - 1);
+      data_points[data_points_len++] = dp;
 
-    if (i >= DATA_SETS_MAX) break;
+      if (data_points_len >= DATA_SETS_MAX) break;
+    }
   }
 
-  return i;
+  if (graph == NULL) return;
+  
+  for (unsigned int i = 0; i < data_points_len; ++i) {
+    struct data_point dp = data_points[i];
+    graph_push_or_add(graph, dp.name, dp.value * 2);
+  }
 }
 
+static unsigned int graphs_to_tabs(char *tabs[GRAPHS_MAX],
+				   struct graph graphs[GRAPHS_MAX],
+				   unsigned int graphs_len) {
+  for (unsigned int i = 0; i < graphs_len; ++i) {
+    tabs[i] = graphs[i].name;
+  }
+
+  return graphs_len;
+}
+		      
 int main(void) {
     const int screen_width = 1200;
     const int screen_height = 800;
@@ -93,7 +132,7 @@ int main(void) {
         .width = 50,
         .height = 20,
     };
-    const char *tabs[] = {"PID", "Orientation"};
+    char *tabs[GRAPHS_MAX];
     int active_tab = 0;
 
     const int control_group_width = 200;
@@ -114,9 +153,6 @@ int main(void) {
         .width = screen_width - (screen_width - control_group.x) - (2 * PADDING),
         .height = screen_height - (tab_bar.y + tab_bar.height + 2 * PADDING),
     };
-    struct graph sine_graph = graph_new(graph_rect, "Sine");
-    struct graph cosine_graph = graph_new(graph_rect, "Cosine");
-    struct graph_data_set *cosine = graph_add_data_set(&cosine_graph, "Cosine", RED);
 
     InitWindow(screen_width, screen_height, "Tower");
     SetTargetFPS(60);
@@ -137,22 +173,7 @@ int main(void) {
     char pico_in[TTY_MSG_MAX];
     while (!WindowShouldClose()) {
         if (fgets(pico_in, TTY_MSG_MAX, pico) != NULL) {
-	  struct data_point data_points[DATA_SETS_MAX];
-	  unsigned int len = parse_graph_message(pico_in, data_points);
-	  for(; len > 0; --len) {
-	    struct data_point dp = data_points[len - 1];
-	    graph_push_or_add(&sine_graph, dp.name, dp.value * 2);
-	  }
-            /*
-            - Have a global list of graphs
-            - Split the incoming message by ';'
-            - If the key == 'graph' split by '=' to get the key
-            - If no graph with a name equal to the key exists create a new one
-            - else select the matching graph
-            - continue parsing
-            - If a key does not match the name of data_set create a new one
-            - else push the value as new data point
-                  */
+	  parse_graph_message(pico_in, graph_rect);
         } else {
           //  perror("failed to read pico_in");
         }
@@ -160,15 +181,14 @@ int main(void) {
         BeginDrawing();
         ClearBackground(WHITE);
 
-        GuiTabBar(tab_bar, tabs, 2, &active_tab);
+	const unsigned int tabs_len = graphs_to_tabs(tabs, graphs, graphs_len);
+        GuiTabBar(tab_bar, (const char **)tabs, tabs_len, &active_tab);
 
-        if (active_tab == 0) graph_draw(&sine_graph);
-        else graph_draw(&cosine_graph);
+	if (graphs_len > 0) graph_draw(&graphs[active_tab]);
 
         GuiGroupBox(control_group, "Controller Gains");
         p_gain = GuiSliderBar(p_gain_slider, "P", TextFormat("%.2f", p_gain), p_gain, 0, 1);
-        i_gain = GuiSliderBar(i_gain_slider, "I", TextFormat("%.2f", i_gain), i_gain, 0, 1);
-        d_gain = GuiSliderBar(d_gain_slider, "D", TextFormat("%.2f", d_gain), d_gain, 0, 1);
+        i_gain = GuiSliderBar(i_gain_slider, "I", TextFormat("%.2f", i_gain), i_gain, 0, 1);        d_gain = GuiSliderBar(d_gain_slider, "D", TextFormat("%.2f", d_gain), d_gain, 0, 1);
 
         EndDrawing();
     }
@@ -178,8 +198,7 @@ int main(void) {
 
 raylib_teardown:
     CloseWindow();
-    graph_free(&sine_graph);
-    graph_free(&cosine_graph);
+    free_graphs();
 
     panic_on_error();
 

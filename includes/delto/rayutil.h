@@ -47,6 +47,9 @@ Rectangle grouped_button(const Rectangle group, const int index) {
 
 /* Graph */
 #define GRAPH_NAME_MAX 20
+#define DATA_SETS_MAX 5
+#define GRAPH_LINE_WIDTH 1
+
 struct graph_data_set {
   double* data;
   unsigned int data_len;
@@ -84,7 +87,6 @@ double graph_data_set_get(const struct graph_data_set* const ds, unsigned int i)
   return ds->data[index];
 }
 
-#define DATA_SETS_MAX 5
 struct graph {
   Rectangle rect;
   char name[GRAPH_NAME_MAX];
@@ -138,7 +140,6 @@ struct graph_data_set * graph_push_or_add(struct graph *g, char *name, double va
   return data_set;
 }
 
-#define GRAPH_LINE_WIDTH 1.5
 void graph_draw(const struct graph* const lg) {
   const int x = lg->rect.x;
   const int y = lg->rect.y;
