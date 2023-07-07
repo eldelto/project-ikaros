@@ -10,6 +10,7 @@
 #include "vmath.h"
 #include "sensor_fusion.h"
 #include "servo.h"
+#include "delto/pid.h"
 
 /* Main Logic */
 #define SAMPLE_RATE_MS (50)
@@ -88,6 +89,12 @@ int main() {
   int16_t gyro_mean[3], acceleration_mean[3];
   quaternion quat = IDENTITY_QUATERNION;
 
+  struct pid_controller roll_pid = {
+    .p_gain = 1,
+    .i_gain = 0.1,
+    .d_gain = 1,
+  };
+
   while (true) {
     watchdog_update();
 
@@ -121,6 +128,9 @@ int main() {
     euler angles = quaternion_to_euler(quat);
     printf("graph=Euler Angles;roll=%f;pitch=%f;yaw=%f\n", angles.roll, angles.pitch, angles.yaw);
 
+    const double roll_thrust = pid_calculate_output(&roll_pid, 0, angles.roll);
+    printf("graph=PID;roll thrust=%f\n", roll_thrust);
+    
     servo_write(MOTOR0_GPIO, angles.roll * 728 + MOTOR_ARM);
 
     sleep_ms(SAMPLE_RATE_MS);
