@@ -129,9 +129,12 @@ int main() {
     printf("graph=Euler Angles;roll=%f;pitch=%f;yaw=%f\n", angles.roll, angles.pitch, angles.yaw);
 
     const double roll_thrust = pid_calculate_output(&roll_pid, 0, angles.roll);
-    printf("graph=PID;roll thrust=%f\n", roll_thrust);
+    //printf("graph=PID;roll thrust=%f\n", roll_thrust);
     
     servo_write(MOTOR0_GPIO, angles.roll * 728 + MOTOR_ARM);
+
+    char chr = getchar_timeout_us(10);
+    putchar(chr);
 
     sleep_ms(SAMPLE_RATE_MS);
   }

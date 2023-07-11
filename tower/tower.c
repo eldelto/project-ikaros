@@ -16,6 +16,7 @@
 
 #define TTY_MSG_MAX 100
 #define GRAPHS_MAX 5
+#define WRITE_DIVIDER 60
 
 static const char tty_dir[] = "/dev";
 static char pico_tty[100] = "";
@@ -123,84 +124,91 @@ static unsigned int graphs_to_tabs(char *tabs[GRAPHS_MAX],
 }
 		      
 int main(void) {
-    const int screen_width = 1200;
-    const int screen_height = 800;
+  const int screen_width = 1200;
+  const int screen_height = 800;
 
-    const Rectangle tab_bar = {
-        .x = PADDING,
-        .y = 20,
-        .width = 50,
-        .height = 20,
-    };
-    char *tabs[GRAPHS_MAX];
-    int active_tab = 0;
+  const Rectangle tab_bar = {
+    .x = PADDING,
+    .y = 20,
+    .width = 50,
+    .height = 20,
+  };
+  char *tabs[GRAPHS_MAX];
+  int active_tab = 0;
 
-    const int control_group_width = 200;
-    const Rectangle control_group = {
-        .x = screen_width - (control_group_width + PADDING),
-        .y = PADDING,
-        .width = control_group_width,
-        .height = screen_height - ( 2 * PADDING),
-    };
+  const int control_group_width = 200;
+  const Rectangle control_group = {
+    .x = screen_width - (control_group_width + PADDING),
+    .y = PADDING,
+    .width = control_group_width,
+    .height = screen_height - ( 2 * PADDING),
+  };
 
-    const Rectangle p_gain_slider = grouped_slider(control_group, 0);
-    const Rectangle i_gain_slider = grouped_slider(control_group, 1);
-    const Rectangle d_gain_slider = grouped_slider(control_group, 2);
+  const Rectangle p_gain_slider = grouped_slider(control_group, 0);
+  const Rectangle i_gain_slider = grouped_slider(control_group, 1);
+  const Rectangle d_gain_slider = grouped_slider(control_group, 2);
 
-    const Rectangle graph_rect = {
-        .x = PADDING,
-        .y = tab_bar.y + tab_bar.height + PADDING,
-        .width = screen_width - (screen_width - control_group.x) - (2 * PADDING),
-        .height = screen_height - (tab_bar.y + tab_bar.height + 2 * PADDING),
-    };
+  const Rectangle graph_rect = {
+    .x = PADDING,
+    .y = tab_bar.y + tab_bar.height + PADDING,
+    .width = screen_width - (screen_width - control_group.x) - (2 * PADDING),
+    .height = screen_height - (tab_bar.y + tab_bar.height + 2 * PADDING),
+  };
 
-    InitWindow(screen_width, screen_height, "Tower");
-    SetTargetFPS(60);
+  InitWindow(screen_width, screen_height, "Tower");
+  SetTargetFPS(60);
 
-    float p_gain = 0;
-    float i_gain = 0;
-    float d_gain = 0;
-    bool second_set_point = false;
+  float p_gain = 0;
+  float i_gain = 0;
+  float d_gain = 0;
+  bool second_set_point = false;
 
-    const double set_point_1 = screen_height/2;
-    const double set_point_2 = screen_height/4;
+  const double set_point_1 = screen_height/2;
+  const double set_point_2 = screen_height/4;
 
-    find_pico_tty();
-    printf("Connecting to tty '%s' ...\n", pico_tty);
-    FILE *pico = openserial(pico_tty);
-    if (pico == NULL) goto raylib_teardown;
+  find_pico_tty();
+  printf("Connecting to tty '%s' ...\n", pico_tty);
+  FILE *pico = openserial(pico_tty);
+  if (pico == NULL) goto raylib_teardown;
 
-    char pico_in[TTY_MSG_MAX];
-    while (!WindowShouldClose()) {
-        if (fgets(pico_in, TTY_MSG_MAX, pico) != NULL) {
-	  parse_graph_message(pico_in, graph_rect);
-        } else {
-          //  perror("failed to read pico_in");
-        }
-
-        BeginDrawing();
-        ClearBackground(WHITE);
-
-	const unsigned int tabs_len = graphs_to_tabs(tabs, graphs, graphs_len);
-        GuiTabBar(tab_bar, (const char **)tabs, tabs_len, &active_tab);
-
-	if (graphs_len > 0) graph_draw(&graphs[active_tab]);
-
-        GuiGroupBox(control_group, "Controller Gains");
-        p_gain = GuiSliderBar(p_gain_slider, "P", TextFormat("%.2f", p_gain), p_gain, 0, 1);
-        i_gain = GuiSliderBar(i_gain_slider, "I", TextFormat("%.2f", i_gain), i_gain, 0, 1);        d_gain = GuiSliderBar(d_gain_slider, "D", TextFormat("%.2f", d_gain), d_gain, 0, 1);
-
-        EndDrawing();
+  char pico_in[TTY_MSG_MAX];
+  unsigned int frame_nr = 0;
+  while (!WindowShouldClose()) {
+//    if (frame_nr++ % WRITE_DIVIDER == 0) {
+//      if (fprintf(pico, "msg=hello from tower;\n") < 0) perror("failed to write to serial bus");
+//      else puts("wrote to pico!");
+//    }
+      
+    if (fgets(pico_in, sizeof(pico_in) - 1, pico) != NULL) {
+      printf("received: %s\n", pico_in);
+      parse_graph_message(pico_in, graph_rect);
+    } else {
+      //  perror("failed to read pico_in");
     }
 
-    // pico_close:
-    fclose(pico);
+    BeginDrawing();
+    ClearBackground(WHITE);
 
-raylib_teardown:
-    CloseWindow();
-    free_graphs();
+    const unsigned int tabs_len = graphs_to_tabs(tabs, graphs, graphs_len);
+    GuiTabBar(tab_bar, (const char **)tabs, tabs_len, &active_tab);
 
-    panic_on_error();
+    if (graphs_len > 0) graph_draw(&graphs[active_tab]);
 
-    return EXIT_SUCCESS;
+    GuiGroupBox(control_group, "Controller Gains");
+    p_gain = GuiSliderBar(p_gain_slider, "P", TextFormat("%.2f", p_gain), p_gain, 0, 1);
+    i_gain = GuiSliderBar(i_gain_slider, "I", TextFormat("%.2f", i_gain), i_gain, 0, 1);        d_gain = GuiSliderBar(d_gain_slider, "D", TextFormat("%.2f", d_gain), d_gain, 0, 1);
+
+    EndDrawing();
+  }
+
+  // pico_close:
+  fclose(pico);
+
+ raylib_teardown:
+  CloseWindow();
+  free_graphs();
+
+  panic_on_error();
+
+  return EXIT_SUCCESS;
 }
