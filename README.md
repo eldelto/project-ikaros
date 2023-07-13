@@ -1,32 +1,27 @@
 # Table of Contents
 
-- [Table of Contents](#table-of-contents)
-- [Project Ikaros](#project-ikaros)
-  - [Goals](#goals)
-  - [Milestones](#milestones)
-  - [Getting Started](#getting-started)
-    - [Prerequisites](#prerequisites)
-    - [Compilation](#compilation)
-    - [Useful Make Targets](#useful-make-targets)
-  - [Hardware](#hardware)
-    - [uC](#uc)
-    - [Accelerometer](#accelerometer)
-    - [Barometer](#barometer)
-  - [Software Components](#software-components)
-    - [Flight Controller](#flight-controller)
-    - [Tower](#tower)
-    - [Random Data Generator](#random-data-generator)
-    - [Serial Data Relay](#serial-data-relay)
-    - [Data Store](#data-store)
-    - [CSM - Comma Separated Map](#csm---comma-separated-map)
+1.  [Project Ikaros](#org9bfe191)
+    1.  [Goals](#org8f84d66)
+    2.  [Milestones](#orgd1a2004)
+    3.  [Getting Started](#orgc228aee)
+        1.  [Prerequisites](#org5898dce)
+        2.  [Compilation](#org4436a0c)
+        3.  [Useful Make Targets](#org9d393f8)
+    4.  [Hardware](#org1b31121)
+        1.  [uC](#org855b405)
+        2.  [Accelerometer](#org877ed4e)
+        3.  [Barometer](#org88017d0)
+    5.  [Software Components](#org778b74b)
+        1.  [Flight Controller](#org4886648)
+        2.  [Tower](#org4a253cd)
 
 
-<a id="orge3ab56d"></a>
+<a id="org9bfe191"></a>
 
 # Project Ikaros
 
 
-<a id="org9814574"></a>
+<a id="org8f84d66"></a>
 
 ## Goals
 
@@ -35,7 +30,7 @@ hardware concepts while trying to build some sort of
 self-stabilizing aerial vehicle (e.g. drone, plane, etc.).
 
 
-<a id="orgfecf16c"></a>
+<a id="orgd1a2004"></a>
 
 ## Milestones
 
@@ -44,21 +39,20 @@ self-stabilizing aerial vehicle (e.g. drone, plane, etc.).
 -   [X] Choose software stack (uC, base station, persistence)
 -   [X] Display fake sensor data
 -   [X] Display live sensor data
+-   [ ] Controll two motors to properly balance a see-saw
 -   [ ] Get reliable sensor readings under motor vibrations
 -   [ ] Persist sensor data and display historical data
--   [ ] Build test frame to balance a single motor powered lever
--   [ ] Controll a single motor to properly balance a lever
 -   **TBD**
 
 
-<a id="org2a042ab"></a>
+<a id="orgc228aee"></a>
 
 ## Getting Started
 
 A quick guide to get the project up and running.
 
 
-<a id="orgc32145c"></a>
+<a id="org5898dce"></a>
 
 ### Prerequisites
 
@@ -129,7 +123,7 @@ next section.
         updates can be applied with `make flash-pico`.
 
 
-<a id="orgb25c0ad"></a>
+<a id="org4436a0c"></a>
 
 ### Compilation
 
@@ -139,7 +133,7 @@ and some additional tools. Running `make` in the project root
 will compile all subprojects and output their binaries to `bin/`.
 
 
-<a id="org979451b"></a>
+<a id="org9d393f8"></a>
 
 ### Useful Make Targets
 
@@ -186,18 +180,6 @@ A short reference on the most used make targets:
 
 
 <tr>
-<td class="org-left">make run-loop</td>
-<td class="org-left">Runs the tower backend and restarts it on file changes</td>
-</tr>
-
-
-<tr>
-<td class="org-left">make test-loop</td>
-<td class="org-left">Runs tests for all subprojects and reruns them on file changes</td>
-</tr>
-
-
-<tr>
 <td class="org-left">make flash-pico</td>
 <td class="org-left">Flashes software changes to the Raspberry Pi Pico</td>
 </tr>
@@ -211,14 +193,14 @@ A short reference on the most used make targets:
 </table>
 
 
-<a id="orga354b2f"></a>
+<a id="org1b31121"></a>
 
 ## Hardware
 
 Some thoughts on different hardware options that could be used.
 
 
-<a id="orgee0e80c"></a>
+<a id="org855b405"></a>
 
 ### uC
 
@@ -240,7 +222,7 @@ Possible microcontrollers to execute the control loop on.
     Adafruit projects. Costing only around 5 € (or 8 € with WIFI).
 
 
-<a id="orgbe1d299"></a>
+<a id="org877ed4e"></a>
 
 ### Accelerometer
 
@@ -261,29 +243,22 @@ Possible accelerometer sensors.
     up resources on the main uC.
 
 
-<a id="org46a584a"></a>
+<a id="org88017d0"></a>
 
 ### Barometer
 
 **TBD**
 
 
-<a id="org801fa0b"></a>
+<a id="org778b74b"></a>
 
 ## Software Components
 
 -   Flight Controller (uC)
--   Data Analyzer (web app)
--   Tower (server)
-    -   Data Analyzer
-    -   Message Broker
-    -   Data Ingestor
--   Data Store (database)
--   Random Data Generator (CLI)
--   Serial Data Relay (CLI)
+-   Tower (GUI app)
 
 
-<a id="org7b659c5"></a>
+<a id="org4886648"></a>
 
 ### Flight Controller
 
@@ -302,130 +277,14 @@ want to give Forth a try.
     -   [ ] Controls multiple actuators
 
 
-<a id="orgbab6508"></a>
+<a id="org4a253cd"></a>
 
 ### Tower
 
-For simplicities sake is has been decided to move most backend
-logic into a single deployable unit dubbed `Tower`. Refer to the
-sub-components for further details.
+Tower is a native GUI application to display graph data sent from
+the flight controller and in return send some controlling data
+back to arm/disarm and tune the PID controllers.
 
-1.  Data Analyzer
+For the actual GUI drawing `raylib` and `raylibgui` are used. The
+graphs are drawn by a custom implementation.
 
-    The data analyzer is a web application that visualizes sensor data
-    (live or stored).
-    
-    1.  Features
-    
-        -   [X] Displays live data received from the Message Broker via an
-            auto-scrolling line graph
-        -   [ ] Displays historical data received from its own backend or
-            the broker? **TBD**
-
-2.  Message Broker
-
-    A pub/sub message broker that handles message fan out and ties
-    the different componenets together.
-    
-    1.  Features
-    
-        -   [X] Handle basic message fan out
-        -   [ ] Require authentication for message posting
-        -   [ ] Require authentication for message reading
-    
-    2.  Protocol
-    
-        What kind of actions need to be supported?
-        
-        -   Publish data
-        -   Receive data
-        -   Authenticating as producer (microcontroller) or consumer
-            (web-app)
-
-3.  Data Ingestor
-
-    A server application that connects to the Message Broker, ingests
-    incoming messages and forwards them to the Data Store for
-    persistent storage.
-    
-    1.  Features
-    
-        -   [ ] Connect to the Message Broker and receive messages from a
-            configurable topic
-        -   [ ] Manage the Data Store schema via automatically applied
-            migrations
-        -   [ ] Persist messages in the Data Store
-
-
-<a id="org57eedf3"></a>
-
-### Random Data Generator
-
-A small CLI tool that connects to the Message Broker and
-submits random data in a specified range.
-
-1.  Features
-
-    -   [X] Connect to the Message Broker and submmit data
-    -   [X] Submit a sine wave
-
-
-<a id="org5dfeeb1"></a>
-
-### Serial Data Relay
-
-A CLI tool that reads from the serial port and relays the
-incoming data to the Message Broker.
-
-1.  Features
-
-    -   [X] Read from the serial port and print the data to stdout
-    -   [X] Relay data to the Message Broker
-
-
-<a id="org3060ec0"></a>
-
-### Data Store
-
-The persistent storage layer of the project.
-
-1.  Features
-
-    -   [ ] Persist sensor data from different sources
-    -   [ ] Add proper indices to speed up data retrieval
-    -   [ ] Compress the stored data to save disk space
-
-
-<a id="org179b9f9"></a>
-
-### CSM - Comma Separated Map
-
-CSM is a minimalistic data exchange format that allows to
-transmit key/value pairs.
-
-This exchange format is motivated by the need to transmit
-key/value data without needing a full JSON parser running on an
-embedded device. Therefore the main goal is ease of parsing and
-resource efficient serialization/deserialization.
-
-1.  Specification
-
-    Messages are treated as UTF-8 encoded strings. Each key has to
-    be parsed as a string as are the values. Conversion to different
-    value types are up to the consuming client. Keys and values are
-    separated by `=` whereas each pair is seperated by a single
-    `;`. The end of the messages is signalled by a line feed
-    character (`\n`).
-    
-    A simple example:
-    
-        type=sensorData;gyro=123;accel=456\n
-    
-    A parser can then transform this input into the following map
-    (depicted as JSON):
-    
-        {
-            "type": "sensorData",
-            "gyro": "123",
-            "accel": "456"
-        }

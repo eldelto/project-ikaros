@@ -13,6 +13,7 @@ add_executable(flight-controller
 
 target_include_directories(flight-controller PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
+	../includes
 )
 
 target_compile_definitions(flight-controller PRIVATE

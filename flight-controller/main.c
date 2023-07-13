@@ -10,6 +10,7 @@
 #include "vmath.h"
 #include "sensor_fusion.h"
 #include "servo.h"
+#include "delto/pid.h"
 
 /* Main Logic */
 #define SAMPLE_RATE_MS (50)
@@ -18,6 +19,8 @@
 #define MOTOR0_GPIO (7)
 #define MOTOR_ARM   (9000)
 #define MOTOR_IDLE  (9000)
+
+#define TTY_MSG_MAX 100
 
 static void handle_error(const int error_value, const char const* error_message) {
   if (error_value >= 0)
@@ -49,6 +52,23 @@ static void read_raw_values() {
     return;
   }
   ring_buffer_insert(&acceleration_data, acceleration);
+}
+
+static int get_line(char msg_buffer[TTY_MSG_MAX], uint32_t timeout_us) {
+  char c = '\0';
+  unsigned int i = 0;
+  while ((c = getchar_timeout_us(timeout_us)) != '\n') {
+      if (c == PICO_ERROR_TIMEOUT) return -1;
+
+      msg_buffer[i++] = c;
+      if (i >= (TTY_MSG_MAX - 1)) {
+	--i;
+	break;
+      }
+    }
+
+  msg_buffer[i] = '\0';
+  return 0;
 }
 
 int main() {
@@ -88,6 +108,12 @@ int main() {
   int16_t gyro_mean[3], acceleration_mean[3];
   quaternion quat = IDENTITY_QUATERNION;
 
+  struct pid_controller roll_pid = {
+    .p_gain = 1,
+    .i_gain = 0.1,
+    .d_gain = 1,
+  };
+
   while (true) {
     watchdog_update();
 
@@ -121,7 +147,14 @@ int main() {
     euler angles = quaternion_to_euler(quat);
     printf("graph=Euler Angles;roll=%f;pitch=%f;yaw=%f\n", angles.roll, angles.pitch, angles.yaw);
 
+    const double roll_thrust = pid_calculate_output(&roll_pid, 0, angles.roll);
+    //printf("graph=PID;roll thrust=%f\n", roll_thrust);
+    
     servo_write(MOTOR0_GPIO, angles.roll * 728 + MOTOR_ARM);
+
+    char msg[TTY_MSG_MAX] = "";
+    if (get_line(msg, 10) != 0) puts("error reading tty msg");
+    puts(msg);
 
     sleep_ms(SAMPLE_RATE_MS);
   }
