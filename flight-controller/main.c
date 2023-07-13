@@ -20,6 +20,8 @@
 #define MOTOR_ARM   (9000)
 #define MOTOR_IDLE  (9000)
 
+#define TTY_MSG_MAX 100
+
 static void handle_error(const int error_value, const char const* error_message) {
   if (error_value >= 0)
     return;
@@ -50,6 +52,23 @@ static void read_raw_values() {
     return;
   }
   ring_buffer_insert(&acceleration_data, acceleration);
+}
+
+static int get_line(char msg_buffer[TTY_MSG_MAX], uint32_t timeout_us) {
+  char c = '\0';
+  unsigned int i = 0;
+  while ((c = getchar_timeout_us(timeout_us)) != '\n') {
+      if (c == PICO_ERROR_TIMEOUT) return -1;
+
+      msg_buffer[i++] = c;
+      if (i >= (TTY_MSG_MAX - 1)) {
+	--i;
+	break;
+      }
+    }
+
+  msg_buffer[i] = '\0';
+  return 0;
 }
 
 int main() {
@@ -133,8 +152,9 @@ int main() {
     
     servo_write(MOTOR0_GPIO, angles.roll * 728 + MOTOR_ARM);
 
-    char chr = getchar_timeout_us(10);
-    putchar(chr);
+    char msg[TTY_MSG_MAX] = "";
+    if (get_line(msg, 10) != 0) puts("error reading tty msg");
+    puts(msg);
 
     sleep_ms(SAMPLE_RATE_MS);
   }
