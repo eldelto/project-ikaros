@@ -10,7 +10,9 @@
 #include "vmath.h"
 #include "sensor_fusion.h"
 #include "servo.h"
+
 #include "delto/pid.h"
+#include "delto/util.h"
 
 /* Main Logic */
 #define SAMPLE_RATE_MS (50)
@@ -111,7 +113,7 @@ int main() {
 
   struct pid_controller roll_pid = {
     .p_gain = 1,
-    .i_gain = 0.1,
+    .i_gain = 0,
     .d_gain = 1,
   };
 
@@ -148,15 +150,11 @@ int main() {
     euler angles = quaternion_to_euler(quat);
     printf("graph=Euler Angles;roll=%f;pitch=%f;yaw=%f\n", angles.roll, angles.pitch, angles.yaw);
 
-    const double roll_thrust = pid_calculate_output(&roll_pid, 0, angles.roll);
-    //printf("graph=PID;roll thrust=%f\n", roll_thrust);
+    double roll_thrust = pid_calculate_output(&roll_pid, 0, angles.roll);
+    roll_thrust = dlt_clamp_value(roll_thrust, 0, 255);
+    printf("graph=PID;roll thrust=%f\n", roll_thrust);
     
-    servo_write(MOTOR0_GPIO, angles.roll * 728 + MOTOR_ARM);
-
-    char msg[TTY_MSG_MAX] = "";
-    //if (get_line(msg, 10) > 0) puts(msg);
-
-    //putchar(getchar_timeout_us(100));
+    servo_write(MOTOR0_GPIO, roll_thrust);
     
     sleep_ms(SAMPLE_RATE_MS);
   }

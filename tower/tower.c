@@ -26,7 +26,7 @@ void find_pico_tty(void) {
     bool found = false;
 
     DIR *dev = opendir(tty_dir);
-    if (dev == NULL) fatal_error("failed to open /dev");
+    if (dev == NULL) dlt_fatal_error("failed to open /dev");
 
     struct dirent *entry = NULL;
     while ((entry = readdir(dev))) {
@@ -36,7 +36,7 @@ void find_pico_tty(void) {
         // Check if it could be the pico tty by prefix.
         if (strncmp(entry->d_name, tty_prefix, sizeof(tty_prefix) - 1) == 0) {
             if (found) {
-                error("failed to find unique pico tty");
+                dlt_error("failed to find unique pico tty");
                 goto close_dir;
             }
 
@@ -47,12 +47,12 @@ void find_pico_tty(void) {
         }
     }
 
-    if (!found) error("failed to find pico tty");
+    if (!found) dlt_error("failed to find pico tty");
 
 close_dir:
     closedir(dev);
 
-    panic_on_error();
+    dlt_panic_on_error();
 }
 
 static struct graph graphs[GRAPHS_MAX];
@@ -61,7 +61,7 @@ static unsigned int graphs_len = 0;
 static struct graph *add_graph(Rectangle rect, char name[GRAPH_NAME_MAX]) {
   for(unsigned int i = 0; i < graphs_len; ++i) {
     struct graph *g = &graphs[i];
-    if (string_equals(g->name, name)) return g;
+    if (dlt_string_equals(g->name, name)) return g;
   }
   
   struct graph g = graph_new(rect, name);
@@ -80,7 +80,7 @@ struct data_point {
   double value;
 };
 
-static void parse_graph_message(char message[TTY_MSG_MAX], Rectangle graph_rect) {
+static int parse_graph_message(char message[TTY_MSG_MAX], Rectangle graph_rect) {
   char *token = "";
   struct graph *graph = NULL;
   struct data_point data_points[DATA_SETS_MAX];
@@ -91,7 +91,7 @@ static void parse_graph_message(char message[TTY_MSG_MAX], Rectangle graph_rect)
     char *value = strsep(&token, "=");
     if (key == NULL || value == NULL) continue;
 
-    if (string_equals(key, "graph")) {
+    if (dlt_string_equals(key, "graph")) {
       graph = add_graph(graph_rect, value);
     } else {
       struct data_point dp = {
@@ -105,12 +105,14 @@ static void parse_graph_message(char message[TTY_MSG_MAX], Rectangle graph_rect)
     }
   }
 
-  if (graph == NULL) return;
+  if (graph == NULL) return -1;
   
   for (unsigned int i = 0; i < data_points_len; ++i) {
     struct data_point dp = data_points[i];
     graph_push_or_add(graph, dp.name, dp.value * 2);
   }
+
+  return 0;
 }
 
 static unsigned int graphs_to_tabs(char *tabs[GRAPHS_MAX],
@@ -179,8 +181,7 @@ int main(void) {
     }
       
     if (fgets(pico_in, sizeof(pico_in) - 1, pico) != NULL) {
-      printf("received: %s\n", pico_in);
-      parse_graph_message(pico_in, graph_rect);
+      if (parse_graph_message(pico_in, graph_rect) != 0) printf("received: %s\n", pico_in);
     } else {
       //  perror("failed to read pico_in");
     }
@@ -208,7 +209,7 @@ int main(void) {
   CloseWindow();
   free_graphs();
 
-  panic_on_error();
+  dlt_panic_on_error();
 
   return EXIT_SUCCESS;
 }

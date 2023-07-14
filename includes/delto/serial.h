@@ -9,12 +9,12 @@
 FILE * openserial(char *path) {
   int fd = open(path, O_RDWR | O_NOCTTY | O_NONBLOCK);
   if (fd == -1) {
-    error("failed to open tty");
+    dlt_error("failed to open tty");
     return NULL;
   }
 
   if (fcntl(fd, F_SETFL, FNDELAY) == -1) {
-    error("failed to set tty flags");
+    dlt_error("failed to set tty flags");
     close(fd);
     return NULL;
   }
@@ -42,7 +42,7 @@ FILE * openserial(char *path) {
  
   FILE *serial = fdopen(fd, "r+t");
   if (serial == NULL) {
-    error("failed to convert file descriptor to FILE");
+    dlt_error("failed to convert file descriptor to FILE");
     close(fd);
     return NULL;
   }
