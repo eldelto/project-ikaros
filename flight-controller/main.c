@@ -55,20 +55,21 @@ static void read_raw_values() {
 }
 
 static int get_line(char msg_buffer[TTY_MSG_MAX], uint32_t timeout_us) {
-  char c = '\0';
+  int c = 0;
   unsigned int i = 0;
   while ((c = getchar_timeout_us(timeout_us)) != '\n') {
-      if (c == PICO_ERROR_TIMEOUT) return -1;
+    //printf("char=%d\n", c);
+    if (c == PICO_ERROR_TIMEOUT || c < 0 || c > 255) return -1;
 
-      msg_buffer[i++] = c;
-      if (i >= (TTY_MSG_MAX - 1)) {
-	--i;
-	break;
-      }
+    msg_buffer[i++] = c;
+    if (i >= (TTY_MSG_MAX - 1)) {
+      --i;
+      break;
     }
+  }
 
   msg_buffer[i] = '\0';
-  return 0;
+  return i;
 }
 
 int main() {
@@ -153,9 +154,10 @@ int main() {
     servo_write(MOTOR0_GPIO, angles.roll * 728 + MOTOR_ARM);
 
     char msg[TTY_MSG_MAX] = "";
-    if (get_line(msg, 10) != 0) puts("error reading tty msg");
-    puts(msg);
+    //if (get_line(msg, 10) > 0) puts(msg);
 
+    //putchar(getchar_timeout_us(100));
+    
     sleep_ms(SAMPLE_RATE_MS);
   }
 

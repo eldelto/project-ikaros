@@ -174,10 +174,9 @@ int main(void) {
   char pico_in[TTY_MSG_MAX];
   unsigned int frame_nr = 0;
   while (!WindowShouldClose()) {
-//    if (frame_nr++ % WRITE_DIVIDER == 0) {
-//      if (fprintf(pico, "msg=hello from tower;\n") < 0) perror("failed to write to serial bus");
-//      else puts("wrote to pico!");
-//    }
+    if (frame_nr++ % WRITE_DIVIDER == 0) {
+      if (fputs("msg=hello from tower;\n", pico) < 0) perror("failed to write to serial bus");
+    }
       
     if (fgets(pico_in, sizeof(pico_in) - 1, pico) != NULL) {
       printf("received: %s\n", pico_in);
@@ -200,7 +199,8 @@ int main(void) {
 
     EndDrawing();
   }
-
+  
+  puts("Shutting down ...");
   // pico_close:
   fclose(pico);
 
