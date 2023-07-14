@@ -8,11 +8,14 @@ CC := clang
 #       raylib/raygui in a more lenient way.
 CFLAGS  := -Wall -Werror -Wextra -pedantic-errors \
         -Wno-unused-parameter \
-        -Wno-unused-function \
         -Wno-unused-variable \
         -Wno-newline-eof \
         -Wno-unused-but-set-variable \
         -Wno-sign-compare \
+	-Wno-macro-redefined \
+	-D_FORTIFY_SOURCE=2 \
+	-fsanitize=address \
+	-O2 \
         -std=c17 -MMD -MP
 
 LDFLAGS += -Ldeps/raylib/src -lraylib
